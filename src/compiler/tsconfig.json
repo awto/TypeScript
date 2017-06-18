@@ -28,6 +28,7 @@
         "transformers/generators.ts",
         "transformers/es5.ts",
         "transformers/destructuring.ts",
+        "transformers/implicits.ts",
         "transformers/module/module.ts",
         "transformers/module/system.ts",
         "transformers/module/es2015.ts",

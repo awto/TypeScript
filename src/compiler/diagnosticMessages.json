@@ -3658,5 +3658,37 @@
     "Report errors in .js files.": {
         "category": "Message",
         "code": 8019
+    },
+    "Implicit declarations": {
+        "category": "Message",
+        "code": 19000
+    },
+    "No implicits declarations matching '${0}'": {
+        "category": "Error",
+        "code": 19001
+    },
+    "Stack overflow during implicits resolution for '${0}'": {
+        "category": "Error",
+        "code": 19002
+    },
+    "Resolved implicit declaration is not in the scope at the query '${0}'": {
+        "category": "Error",
+        "code": 19003
+    },
+    "Implicits must be before any other parameter": {
+        "category": "Error",
+        "code": 19004
+    },
+    "Enable implicit declarations": {
+        "category": "Message",
+        "code": 19005
+    },
+    "Enable implicit casts": {
+        "category": "Message",
+        "code": 19006
+    },
+    "Maximal implicits resolution stack level": {
+        "category": "Message",
+        "code": 19007
     }
 }

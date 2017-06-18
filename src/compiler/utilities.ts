@@ -2972,6 +2972,7 @@ namespace ts {
             case SyntaxKind.DefaultKeyword: return ModifierFlags.Default;
             case SyntaxKind.AsyncKeyword: return ModifierFlags.Async;
             case SyntaxKind.ReadonlyKeyword: return ModifierFlags.Readonly;
+            case SyntaxKind.ImplicitKeyword: return ModifierFlags.Implicit;
         }
         return ModifierFlags.None;
     }
@@ -4762,6 +4763,7 @@ namespace ts {
             case SyntaxKind.ProtectedKeyword:
             case SyntaxKind.ReadonlyKeyword:
             case SyntaxKind.StaticKeyword:
+            case SyntaxKind.ImplicitKeyword:
                 return true;
         }
         return false;
@@ -5039,7 +5041,8 @@ namespace ts {
             || kind === SyntaxKind.TrueKeyword
             || kind === SyntaxKind.SuperKeyword
             || kind === SyntaxKind.NonNullExpression
-            || kind === SyntaxKind.MetaProperty;
+            || kind === SyntaxKind.MetaProperty
+            || kind === SyntaxKind.QueryImplicit;
     }
 
     /* @internal */

@@ -464,6 +464,7 @@ namespace ts {
         const comparableRelation = createMap<RelationComparisonResult>();
         const identityRelation = createMap<RelationComparisonResult>();
         const enumRelation = createMap<boolean>();
+        const implicitsResolveRelation = createMap<RelationComparisonResult>();
 
         // This is for caching the result of getSymbolDisplayBuilder. Do not access directly.
         let _displayBuilder: SymbolDisplayBuilder;
@@ -3767,7 +3768,8 @@ namespace ts {
                     buildDisplayForTypeParametersAndDelimiters(signature.typeParameters, writer, enclosingDeclaration, flags, symbolStack);
                 }
 
-                buildDisplayForParametersAndDelimiters(signature.thisParameter, signature.parameters, writer, enclosingDeclaration, flags, symbolStack);
+                buildDisplayForParametersAndDelimiters(signature.thisParameter,
+                    (signature.implicitParameters || []).concat(signature.parameters), writer, enclosingDeclaration, flags, symbolStack);
 
                 buildReturnTypeDisplay(signature, writer, enclosingDeclaration, flags, symbolStack);
             }
@@ -5412,7 +5414,8 @@ namespace ts {
         }
 
         function createSignature(declaration: SignatureDeclaration, typeParameters: TypeParameter[], thisParameter: Symbol | undefined, parameters: Symbol[],
-            resolvedReturnType: Type, typePredicate: TypePredicate, minArgumentCount: number, hasRestParameter: boolean, hasLiteralTypes: boolean): Signature {
+            resolvedReturnType: Type, typePredicate: TypePredicate, minArgumentCount: number, hasRestParameter: boolean, hasLiteralTypes: boolean,
+            implicitParameters?: Symbol[]): Signature {
             const sig = new Signature(checker);
             sig.declaration = declaration;
             sig.typeParameters = typeParameters;
@@ -5423,12 +5426,13 @@ namespace ts {
             sig.minArgumentCount = minArgumentCount;
             sig.hasRestParameter = hasRestParameter;
             sig.hasLiteralTypes = hasLiteralTypes;
+            sig.implicitParameters = implicitParameters;
             return sig;
         }
 
         function cloneSignature(sig: Signature): Signature {
             return createSignature(sig.declaration, sig.typeParameters, sig.thisParameter, sig.parameters, sig.resolvedReturnType,
-                sig.typePredicate, sig.minArgumentCount, sig.hasRestParameter, sig.hasLiteralTypes);
+                sig.typePredicate, sig.minArgumentCount, sig.hasRestParameter, sig.hasLiteralTypes, sig.implicitParameters);
         }
 
         function getDefaultConstructSignatures(classType: InterfaceType): Signature[] {
@@ -6328,6 +6332,7 @@ namespace ts {
             const links = getNodeLinks(declaration);
             if (!links.resolvedSignature) {
                 const parameters: Symbol[] = [];
+                const implicitParameters: Symbol[] = [];
                 let hasLiteralTypes = false;
                 let minArgumentCount = 0;
                 let thisParameter: Symbol = undefined;
@@ -6351,6 +6356,12 @@ namespace ts {
                     if (i === 0 && paramSymbol.name === "this") {
                         hasThisParameter = true;
                         thisParameter = param.symbol;
+                    }
+                    else if (getModifierFlags(param) & ModifierFlags.Implicit) {
+                        implicitParameters.push(paramSymbol);
+                        if (parameters.length) {
+                            error(param, Diagnostics.Implicits_must_be_before_any_other_parameter);
+                        }
                     }
                     else {
                         parameters.push(paramSymbol);
@@ -6398,8 +6409,7 @@ namespace ts {
                     syntheticArgsSymbol.isRestParameter = true;
                     parameters.push(syntheticArgsSymbol);
                 }
-
-                links.resolvedSignature = createSignature(declaration, typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, hasRestLikeParameter, hasLiteralTypes);
+                links.resolvedSignature = createSignature(declaration, typeParameters, thisParameter, parameters, returnType, typePredicate, minArgumentCount, hasRestLikeParameter, hasLiteralTypes, implicitParameters);
             }
             return links.resolvedSignature;
         }
@@ -8061,6 +8071,9 @@ namespace ts {
                 /*resolvedReturnType*/ undefined,
                 freshTypePredicate,
                 signature.minArgumentCount, signature.hasRestParameter, signature.hasLiteralTypes);
+            if (signature.implicitParameters !== undefined) {
+                result.implicitParameters = instantiateList(signature.implicitParameters, mapper, instantiateSymbol);
+            }
             result.target = signature;
             result.mapper = mapper;
             return result;
@@ -8311,6 +8324,8 @@ namespace ts {
                 case SyntaxKind.JsxExpression:
                     // It is possible to that node.expression is undefined (e.g <div x={} />)
                     return (<JsxExpression>node).expression && isContextSensitive((<JsxExpression>node).expression);
+                case SyntaxKind.QueryImplicit:
+                    return true;
             }
 
             return false;
@@ -8406,16 +8421,16 @@ namespace ts {
             return isTypeComparableTo(type1, type2) || isTypeComparableTo(type2, type1);
         }
 
-        function checkTypeAssignableTo(source: Type, target: Type, errorNode: Node, headMessage?: DiagnosticMessage, containingMessageChain?: DiagnosticMessageChain): boolean {
-            return checkTypeRelatedTo(source, target, assignableRelation, errorNode, headMessage, containingMessageChain);
+        function checkTypeAssignableTo(source: Type, target: Type, errorNode: Node, headMessage?: DiagnosticMessage, containingMessageChain?: DiagnosticMessageChain, implicitCastNode?: Expression): boolean {
+            return checkTypeRelatedTo(source, target, assignableRelation, errorNode, headMessage, containingMessageChain, implicitCastNode);
         }
 
         /**
          * This is *not* a bi-directional relationship.
          * If one needs to check both directions for comparability, use a second call to this function or 'isTypeComparableTo'.
          */
-        function checkTypeComparableTo(source: Type, target: Type, errorNode: Node, headMessage?: DiagnosticMessage, containingMessageChain?: DiagnosticMessageChain): boolean {
-            return checkTypeRelatedTo(source, target, comparableRelation, errorNode, headMessage, containingMessageChain);
+        function checkTypeComparableTo(source: Type, target: Type, errorNode: Node, headMessage?: DiagnosticMessage, containingMessageChain?: DiagnosticMessageChain, implicitCastNode?: Expression): boolean {
+            return checkTypeRelatedTo(source, target, comparableRelation, errorNode, headMessage, containingMessageChain, implicitCastNode);
         }
 
         function isSignatureAssignableTo(source: Signature,
@@ -8436,7 +8451,9 @@ namespace ts {
             ignoreReturnTypes: boolean,
             reportErrors: boolean,
             errorReporter: ErrorReporter,
-            compareTypes: (s: Type, t: Type, reportErrors?: boolean) => Ternary): Ternary {
+            compareTypes: (s: Type, t: Type, reportErrors?: boolean) => Ternary,
+            ignoreImplicits?: boolean
+            ): Ternary {
             // TODO (drosen): De-duplicate code between related functions.
             if (source === target) {
                 return Ternary.True;
@@ -8447,6 +8464,15 @@ namespace ts {
 
             if (source.typeParameters) {
                 source = instantiateSignatureInContextOf(source, target);
+            }
+            const sourceImplicits = !ignoreImplicits && source.implicitParameters || emptyArray;
+            const targetImplicits = !ignoreImplicits && target.implicitParameters || emptyArray;
+            if (sourceImplicits.length !== targetImplicits.length) {
+                if (reportErrors) {
+                    // TODO: elaborate on implicits
+                    errorReporter(Diagnostics.The_this_types_of_each_signature_are_incompatible);
+                }
+                return Ternary.False;
             }
 
             let result = Ternary.True;
@@ -8473,9 +8499,10 @@ namespace ts {
             const checkCount = getNumParametersToCheckForSignatureRelatability(source, sourceMax, target, targetMax);
             const sourceParams = source.parameters;
             const targetParams = target.parameters;
-            for (let i = 0; i < checkCount; i++) {
-                const sourceType = i < sourceMax ? getTypeOfParameter(sourceParams[i]) : getRestTypeOfSignature(source);
-                const targetType = i < targetMax ? getTypeOfParameter(targetParams[i]) : getRestTypeOfSignature(target);
+            const implicitsCount = targetImplicits.length;
+            for (let i = -implicitsCount; i < checkCount; i++) {
+                const sourceType = i < 0 ? sourceImplicits[- i - 1] : i < sourceMax ? getTypeOfParameter(sourceParams[i]) : getRestTypeOfSignature(source);
+                const targetType =  i < 0 ? targetImplicits[- i - 1] : i < targetMax ? getTypeOfParameter(targetParams[i]) : getRestTypeOfSignature(target);
                 const sourceSig = getSingleCallSignature(getNonNullableType(sourceType));
                 const targetSig = getSingleCallSignature(getNonNullableType(targetType));
                 // In order to ensure that any generic type Foo<T> is at least co-variant with respect to T no matter
@@ -8494,8 +8521,8 @@ namespace ts {
                 if (!related) {
                     if (reportErrors) {
                         errorReporter(Diagnostics.Types_of_parameters_0_and_1_are_incompatible,
-                            sourceParams[i < sourceMax ? i : sourceMax].name,
-                            targetParams[i < targetMax ? i : targetMax].name);
+                            sourceParams[i < 0 ? sourceImplicits[1 - i] : i < sourceMax ? i : sourceMax].name,
+                            targetParams[i < 0 ? targetImplicits[1 - i] : i < targetMax ? i : targetMax].name);
                     }
                     return Ternary.False;
                 }
@@ -8680,7 +8707,7 @@ namespace ts {
             if (s & TypeFlags.Undefined && (!strictNullChecks || t & (TypeFlags.Undefined | TypeFlags.Void))) return true;
             if (s & TypeFlags.Null && (!strictNullChecks || t & TypeFlags.Null)) return true;
             if (s & TypeFlags.Object && t & TypeFlags.NonPrimitive) return true;
-            if (relation === assignableRelation || relation === comparableRelation) {
+            if (relation === assignableRelation || relation === comparableRelation || relation === implicitsResolveRelation) {
                 if (s & TypeFlags.Any) return true;
                 // Type number or any numeric literal type is assignable to any numeric enum type or any
                 // numeric enum literal type. This rule exists for backwards compatibility reasons because
@@ -8723,6 +8750,7 @@ namespace ts {
          * @param errorNode The suggested node upon which all errors will be reported, if defined. This may or may not be the actual node used.
          * @param headMessage If the error chain should be prepended by a head message, then headMessage will be used.
          * @param containingMessageChain A chain of errors to prepend any new errors found.
+         * @param implicitCastNode If implicit cast is enabled there may be a node to cast to solve wrong type problem
          */
         function checkTypeRelatedTo(
             source: Type,
@@ -8730,7 +8758,8 @@ namespace ts {
             relation: Map<RelationComparisonResult>,
             errorNode: Node,
             headMessage?: DiagnosticMessage,
-            containingMessageChain?: DiagnosticMessageChain): boolean {
+            containingMessageChain?: DiagnosticMessageChain,
+            implicitCastNode?: Expression): boolean {
 
             let errorInfo: DiagnosticMessageChain;
             let sourceStack: Type[];
@@ -8742,8 +8771,7 @@ namespace ts {
             let isIntersectionConstituent = false;
 
             Debug.assert(relation !== identityRelation || !errorNode, "no error reporting in identity checking");
-
-            const result = isRelatedTo(source, target, /*reportErrors*/ !!errorNode, headMessage);
+            const result = isRelatedTo(source, target, /*reportErrors*/ !!errorNode, headMessage, implicitCastNode);
             if (overflow) {
                 error(errorNode, Diagnostics.Excessive_stack_depth_comparing_types_0_and_1, typeToString(source), typeToString(target));
             }
@@ -8821,7 +8849,7 @@ namespace ts {
              * * Ternary.Maybe if they are related with assumptions of other relationships, or
              * * Ternary.False if they are not related.
              */
-            function isRelatedTo(source: Type, target: Type, reportErrors?: boolean, headMessage?: DiagnosticMessage): Ternary {
+            function isRelatedTo(source: Type, target: Type, reportErrors?: boolean, headMessage?: DiagnosticMessage, implicitCastNode?: Expression): Ternary {
                 if (source.flags & TypeFlags.StringOrNumberLiteral && source.flags & TypeFlags.FreshLiteral) {
                     source = (<LiteralType>source).regularType;
                 }
@@ -8912,7 +8940,12 @@ namespace ts {
                 }
 
                 isIntersectionConstituent = saveIsIntersectionConstituent;
-
+                if (!result && implicitCastNode !== undefined)  {
+                    if (resolveImplicitCast(implicitCastNode, source, target)) {
+                        errorInfo = saveErrorInfo;
+                        return Ternary.True;
+                    }
+                }
                 if (!result && reportErrors) {
                     if (source.flags & TypeFlags.Object && target.flags & TypeFlags.Primitive) {
                         tryElaborateErrorsForPrimitivesAndObjects(source, target);
@@ -8944,7 +8977,7 @@ namespace ts {
             function hasExcessProperties(source: FreshObjectLiteralType, target: Type, reportErrors: boolean): boolean {
                 if (maybeTypeOfKind(target, TypeFlags.Object) && !(getObjectFlags(target) & ObjectFlags.ObjectLiteralPatternWithComputedProperties)) {
                     const isComparingJsxAttributes = !!(source.flags & TypeFlags.JsxAttributes);
-                    if ((relation === assignableRelation || relation === comparableRelation) &&
+                    if ((relation === assignableRelation || relation === comparableRelation || relation === implicitsResolveRelation) &&
                         (isTypeSubsetOf(globalObjectType, target) || (!isComparingJsxAttributes && isEmptyObjectType(target)))) {
                         return false;
                     }
@@ -9538,7 +9571,7 @@ namespace ts {
              */
             function signatureRelatedTo(source: Signature, target: Signature, erase: boolean, reportErrors: boolean): Ternary {
                 return compareSignaturesRelated(erase ? getErasedSignature(source) : source, erase ? getErasedSignature(target) : target,
-                    /*checkAsCallback*/ false, /*ignoreReturnTypes*/ false, reportErrors, reportError, isRelatedTo);
+                    /*checkAsCallback*/ false, /*ignoreReturnTypes*/ false, reportErrors, reportError, isRelatedTo, relation === implicitsResolveRelation);
             }
 
             function signaturesIdenticalTo(source: Type, target: Type, kind: SignatureKind): Ternary {
@@ -9775,6 +9808,8 @@ namespace ts {
             // A source signature matches a target signature if the two signatures have the same number of required,
             // optional, and rest parameters.
             if (source.parameters.length === target.parameters.length &&
+                (!source.implicitParameters && !target.implicitParameters
+                 || source.implicitParameters.length === target.implicitParameters.length) &&
                 source.minArgumentCount === target.minArgumentCount &&
                 source.hasRestParameter === target.hasRestParameter) {
                 return true;
@@ -9831,6 +9866,18 @@ namespace ts {
                 }
             }
 
+            if (target.implicitParameters) {
+                const targetLen = target.implicitParameters.length;
+                for (let i = 0; i < targetLen; i++) {
+                    const related = compareTypes(
+                        getTypeOfParameter(source.implicitParameters[i]),
+                        getTypeOfParameter(target.implicitParameters[i]));
+                    if (!related) {
+                        return Ternary.False;
+                    }
+                    result &= related;
+                }
+            }
             const targetLen = target.parameters.length;
             for (let i = 0; i < targetLen; i++) {
                 const s = isRestParameterIndex(source, i) ? getRestTypeOfSignature(source) : getTypeOfParameter(source.parameters[i]);
@@ -10243,7 +10290,7 @@ namespace ts {
             const objectFlags = getObjectFlags(type);
             return !!(type.flags & TypeFlags.TypeVariable ||
                 objectFlags & ObjectFlags.Reference && forEach((<TypeReference>type).typeArguments, couldContainTypeVariables) ||
-                objectFlags & ObjectFlags.Anonymous && type.symbol && type.symbol.flags & (SymbolFlags.Function | SymbolFlags.Method | SymbolFlags.TypeLiteral | SymbolFlags.Class) ||
+                objectFlags & ObjectFlags.Anonymous && type.symbol && type.symbol.flags & (SymbolFlags.Function | SymbolFlags.Method | SymbolFlags.TypeLiteral | SymbolFlags.Class | SymbolFlags.ObjectLiteral) ||
                 objectFlags & ObjectFlags.Mapped ||
                 type.flags & TypeFlags.UnionOrIntersection && couldUnionOrIntersectionContainTypeVariables(<UnionOrIntersectionType>type));
         }
@@ -15144,7 +15191,7 @@ namespace ts {
 
                     // Use argument expression as error location when reporting errors
                     const errorNode = reportErrors ? getEffectiveArgumentErrorNode(node, i, arg) : undefined;
-                    if (!checkTypeRelatedTo(argType, paramType, relation, errorNode, headMessage)) {
+                    if (!checkTypeRelatedTo(argType, paramType, relation, errorNode, headMessage, /* containingMessageChain */ undefined, arg)) {
                         return false;
                     }
                 }
@@ -15577,6 +15624,11 @@ namespace ts {
                 result = chooseOverload(candidates, assignableRelation, signatureHelpTrailingComma);
             }
             if (result) {
+                if (compilerOptions.implicits && node.kind === SyntaxKind.CallExpression
+                        && result.implicitParameters && result.implicitParameters.length) {
+                    const call = <CallExpression>node;
+                    call.resolvedImplicitArguments = result.implicitParameters.map((parameter) => resolveImplicitArgument(call, parameter));
+                }
                 return result;
             }
 
@@ -15663,7 +15715,18 @@ namespace ts {
                     const inferenceContext = originalCandidate.typeParameters ?
                         createInferenceContext(originalCandidate, /*flags*/ isInJavaScriptFile(node) ? InferenceFlags.AnyDefault : 0) :
                         undefined;
-
+                    // more context for implicits?
+                    /*
+                    if (compilerOptions.implicits && inferenceContext && node.kind === SyntaxKind.CallExpression
+                        && (originalCandidate.implicitParameters && originalCandidate.implicitParameters.length
+                            || args.some(i => i.kind === SyntaxKind.QueryImplicit))) {
+                        const contextType = getFullContextualType(<CallExpression>node);
+                        if (contextType) {
+                            const returnType = getReturnTypeOfSignature(originalCandidate);
+                            inferTypes(inferenceContext.inferences, contextType, returnType);
+                        }
+                    }
+                    */
                     while (true) {
                         candidate = originalCandidate;
                         if (candidate.typeParameters) {
@@ -16226,7 +16289,7 @@ namespace ts {
             if (produceDiagnostics && targetType !== unknownType) {
                 const widenedType = getWidenedType(exprType);
                 if (!isTypeComparableTo(targetType, widenedType)) {
-                    checkTypeComparableTo(exprType, targetType, node, Diagnostics.Type_0_cannot_be_converted_to_type_1);
+                    checkTypeComparableTo(exprType, targetType, node, Diagnostics.Type_0_cannot_be_converted_to_type_1, /*containingMEssageChain*/ undefined, node.expression);
                 }
             }
             return targetType;
@@ -17386,7 +17449,7 @@ namespace ts {
                     // and the type of the non - compound operation to be assignable to the type of VarExpr.
                     if (checkReferenceExpression(left, Diagnostics.The_left_hand_side_of_an_assignment_expression_must_be_a_variable_or_a_property_access)) {
                         // to avoid cascading errors check assignability only if 'isReference' check succeeded and no errors were reported
-                        checkTypeAssignableTo(valueType, leftType, left, /*headMessage*/ undefined);
+                        checkTypeAssignableTo(valueType, leftType, left, /*headMessage*/ undefined, /*containingMessageChain*/ undefined, right);
                     }
                 }
             }
@@ -17467,7 +17530,9 @@ namespace ts {
                                     : expressionElementType,
                                 signatureElementType,
                                 node.expression,
-                                /*headMessage*/ undefined);
+                                /*headMessage*/ undefined,
+                                /*containingMessageChain*/ undefined,
+                                node.expression);
                         }
                         else {
                             checkTypeAssignableTo(
@@ -17476,7 +17541,9 @@ namespace ts {
                                     : expressionType,
                                 signatureElementType,
                                 node.expression,
-                                /*headMessage*/ undefined);
+                                /*headMessage*/ undefined,
+                                /*containingMessageChain*/ undefined,
+                                node.expression);
                         }
                     }
                 }
@@ -17633,6 +17700,9 @@ namespace ts {
          * to cache the result.
          */
         function getTypeOfExpression(node: Expression, cache?: boolean) {
+            if (node.implicitType) {
+                return node.implicitType;
+            }
             // Optimize for the common case of a call to a function with a single non-generic call
             // signature where we can just fetch the return type without checking the arguments.
             if (node.kind === SyntaxKind.CallExpression && (<CallExpression>node).expression.kind !== SyntaxKind.SuperKeyword && !isRequireCall(node, /*checkArgumentIsStringLiteral*/ true)) {
@@ -17771,6 +17841,8 @@ namespace ts {
                     return undefinedWideningType;
                 case SyntaxKind.YieldExpression:
                     return checkYieldExpression(<YieldExpression>node);
+                case SyntaxKind.QueryImplicit:
+                    return checkQueryImplicit(<QueryImplicit>node);
                 case SyntaxKind.JsxExpression:
                     return checkJsxExpression(<JsxExpression>node, checkMode);
                 case SyntaxKind.JsxElement:
@@ -19895,7 +19967,8 @@ namespace ts {
             if (isBindingPattern(node.name)) {
                 // Don't validate for-in initializer as it is already an error
                 if (node.initializer && node.parent.parent.kind !== SyntaxKind.ForInStatement) {
-                    checkTypeAssignableTo(checkExpressionCached(node.initializer), getWidenedTypeForVariableLikeDeclaration(node), node, /*headMessage*/ undefined);
+                    checkTypeAssignableTo(checkExpressionCached(node.initializer), getWidenedTypeForVariableLikeDeclaration(node), node, /*headMessage*/ undefined,
+                        /*containingMessageChain*/ undefined, node.initializer);
                     checkParameterInitializer(node);
                 }
                 return;
@@ -19906,7 +19979,7 @@ namespace ts {
                 // Node is the primary declaration of the symbol, just validate the initializer
                 // Don't validate for-in initializer as it is already an error
                 if (node.initializer && node.parent.parent.kind !== SyntaxKind.ForInStatement) {
-                    checkTypeAssignableTo(checkExpressionCached(node.initializer), type, node, /*headMessage*/ undefined);
+                    checkTypeAssignableTo(checkExpressionCached(node.initializer), type, node, /*headMessage*/ undefined, /*containingMessageChain*/ undefined, node.initializer);
                     checkParameterInitializer(node);
                 }
             }
@@ -19918,7 +19991,7 @@ namespace ts {
                     error(node.name, Diagnostics.Subsequent_variable_declarations_must_have_the_same_type_Variable_0_must_be_of_type_1_but_here_has_type_2, declarationNameToString(node.name), typeToString(type), typeToString(declarationType));
                 }
                 if (node.initializer) {
-                    checkTypeAssignableTo(checkExpressionCached(node.initializer), declarationType, node, /*headMessage*/ undefined);
+                    checkTypeAssignableTo(checkExpressionCached(node.initializer), declarationType, node, /*headMessage*/ undefined, /*containingMessageChain*/ undefined, node.initializer);
                 }
                 if (!areDeclarationFlagsIdentical(node, symbol.valueDeclaration)) {
                     error(getNameOfDeclaration(symbol.valueDeclaration), Diagnostics.All_declarations_of_0_must_have_identical_modifiers, declarationNameToString(node.name));
@@ -20540,11 +20613,11 @@ namespace ts {
                                 // If the function has a return type, but promisedType is
                                 // undefined, an error will be reported in checkAsyncFunctionReturnType
                                 // so we don't need to report one here.
-                                checkTypeAssignableTo(awaitedType, promisedType, node);
+                                checkTypeAssignableTo(awaitedType, promisedType, node, /*headMessage*/ undefined, /*containingMessageChain*/ undefined, node.expression);
                             }
                         }
                         else {
-                            checkTypeAssignableTo(exprType, returnType, node);
+                            checkTypeAssignableTo(exprType, returnType, node, /*headMessage*/ undefined, /*containingMessageChain*/ undefined, node.expression);
                         }
                     }
                 }
@@ -23714,7 +23787,7 @@ namespace ts {
          * undefined: Need to do full checking on the modifiers.
          */
         function reportObviousModifierErrors(node: Node): boolean | undefined {
-            return !node.modifiers
+            return !node.modifiers || node.modifiers.filter(i => i.kind === SyntaxKind.ImplicitKeyword).length
                 ? false
                 : shouldReportBadModifier(node)
                     ? grammarErrorOnFirstToken(node, Diagnostics.Modifiers_cannot_appear_here)
@@ -24709,8 +24782,235 @@ namespace ts {
                 return grammarErrorOnNode(nodeArguments[0], Diagnostics.Specifier_of_dynamic_import_cannot_be_spread_element);
             }
         }
-    }
 
+        /** like `getContextualType` but also resolves member access expressions and function callees */
+        function getFullContextualType(node: Expression): Type {
+            if (node === undefined) {
+                return anyType;
+            }
+            switch (node.parent.kind) {
+            case SyntaxKind.PropertyAccessExpression:
+                const propertyAccess = <PropertyAccessExpression>node.parent;
+                if (propertyAccess.expression === node) {
+                    const parentType = getFullContextualType(propertyAccess) || anyType;
+                    const symbol = <TransientSymbol>createSymbol(SymbolFlags.Property | SymbolFlags.Transient, propertyAccess.name.text);
+                    symbol.type = parentType;
+                    const members = createMap<Symbol>();
+                    members.set(symbol.name, symbol);
+                    return createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined);
+                }
+                break;
+            case SyntaxKind.CallExpression:
+                const call = <CallExpression>node.parent;
+                if (call.expression === node) {
+                    const parentType = getFullContextualType(call) || anyType;
+                    const parameters = call.arguments.map((i, x) => {
+                        const symbol = <TransientSymbol>createSymbol(SymbolFlags.FunctionScopedVariable | SymbolFlags.Transient, `i${x}`);
+                        symbol.type = getTypeOfNode(i);
+                        return symbol;
+                    });
+                    const signature = createSignature(undefined, [], undefined, parameters, parentType, undefined, call.arguments.length, false, false);
+                    return createAnonymousType(undefined, emptySymbols, [signature], emptyArray, undefined, undefined);
+                }
+                break;
+            }
+            return getContextualType(node) || anyType;
+        }
+
+        function resolveImplicitArgument(call: CallExpression, arg: Symbol): Expression {
+            const result = queryImplicits(getTypeOfSymbol(arg), getImplicitsInScope(call), call);
+            result.parent = call;
+            return result;
+        }
+
+        function getImplicitsInScope(node: Node): Implicit[] {
+            const declarations = createMap<Symbol>();
+            return getParentImplicits(node);
+            function getParentImplicits(node: Node): Implicit[] {
+                if (node.parent === undefined) {
+                    return [];
+                }
+                function getNext() {
+                    if (node.parent.locals !== undefined) {
+                        node.parent.locals.forEach((e, k) => declarations.set(k, e));
+                    }
+                    return node.parent.implicits !== undefined
+                        ? node.parent.implicits
+                        : getParentImplicits(node.parent);
+                }
+                switch (node.parent.kind) {
+                case SyntaxKind.Constructor:
+                case SyntaxKind.FunctionExpression:
+                case SyntaxKind.FunctionDeclaration:
+                case SyntaxKind.ArrowFunction:
+                    const functionDeclaration = <SignatureDeclaration>node.parent;
+                    return [].concat(
+                        ...functionDeclaration.parameters.map(getParameterImplicits),
+                        ...getNext());
+                case SyntaxKind.SourceFile:
+                case SyntaxKind.Block:
+                case SyntaxKind.ModuleBlock:
+                    const result: Implicit[] = node.implicits = [];
+                    const blockNode = <BlockLike>node.parent;
+                    const siglings = blockNode.statements;
+                    const position = siglings.indexOf(<Statement>node);
+                    if (position >= 0) {
+                        for (let i = position - 1; i >= 0; i--) {
+                            const sibling = siglings[i];
+                            switch (sibling.kind) {
+                            case SyntaxKind.VariableStatement:
+                                result.push(...getDeclarationImplicits(<VariableStatement>sibling));
+                                break;
+                            }
+                            if (sibling.implicits !== undefined) {
+                                result.push(...sibling.implicits);
+                                return result;
+                            }
+                        }
+                        result.push(...getNext());
+                    }
+                    return result;
+                }
+                return getNext();
+            }
+            function collectImplicits(result: Implicit[], declaration: VariableDeclaration | ParameterDeclaration | BindingElement) {
+                const binding = declaration.name;
+                if (isBindingPattern(binding)) {
+                    for (const element of binding.elements) {
+                        if (element.kind === SyntaxKind.BindingElement) {
+                            collectImplicits(result, element);
+                        }
+                    }
+                }
+                const symbol = getSymbolAtLocation(binding);
+                const hidden = declarations.has(symbol.name);
+                const matchType = getTypeOfSymbol(symbol);
+                const signatures = getSignaturesOfType(matchType, SignatureKind.Call);
+                if (signatures !== undefined && signatures.length) {
+                    signatures.forEach(signature => {
+                        if (!signature.parameters.length) {
+                            result.unshift({ symbol, matchSignature: signature, hidden });
+                        }
+                    });
+                }
+                result.unshift({ symbol, hidden });
+            }
+
+            function getParameterImplicits(node: ParameterDeclaration): Implicit[] {
+                const result: Implicit[] = [];
+                if (getModifierFlags(node) & ModifierFlags.Implicit) {
+                    collectImplicits(result, node);
+                }
+                return result;
+            }
+
+            function getDeclarationImplicits(node: VariableStatement): Implicit[] {
+                if (node.declaredImplicits !== undefined) {
+                    return node.declaredImplicits;
+                }
+                const result: Implicit[] = node.declaredImplicits = [];
+                if (getModifierFlags(node) & ModifierFlags.Implicit) {
+                    node.declarationList.declarations.forEach((declaration) => collectImplicits(result, declaration));
+                }
+                return result;
+            }
+        }
+
+        function checkQueryImplicit(node: QueryImplicit): Type {
+            if (!compilerOptions.implicits) {
+                return unknownType;
+            }
+            const type = getFullContextualType(node);
+            const result = queryImplicits(type, getImplicitsInScope(node), node);
+            node.resolvedExpression = result;
+            return result.implicitType || anyType;
+        }
+
+        function resolveImplicitCast(node: Expression, from: Type, to: Type): Expression {
+            if (!compilerOptions.implicitCasts) {
+                return undefined;
+            }
+            if (node.implicitCast) {
+                return node.implicitCast;
+            }
+            const parameter = <TransientSymbol>createSymbol(SymbolFlags.FunctionScopedVariable | SymbolFlags.Transient, "i");
+            const parameterLinks = getSymbolLinks(parameter);
+            parameter.type = parameterLinks.type = parameterLinks.declaredType = from;
+            const signature = createSignature(undefined, [], undefined, [parameter], to, undefined, 1, false, false);
+            const castType = createAnonymousType(undefined, emptySymbols, [signature], emptyArray, undefined, undefined);
+            node.implicitType = to;
+            return node.implicitCast = queryImplicits(castType, getImplicitsInScope(node), node, /*reportErrors*/ false);
+        }
+
+        function queryImplicits(type: Type, table: Implicit[], query: Node, reportErrors = true): Expression {
+            const result = queryImplicitsResolution(type, table, compilerOptions.maxImplicitsStack || 10);
+            if (!result && reportErrors) {
+                return createIdentifier("undefined");
+            }
+            return result;
+            function queryImplicitsResolution(type: Type, table: Implicit[], stackLength: number) {
+                if (stackLength === 0) {
+                    reportError(Diagnostics.Stack_overflow_during_implicits_resolution_for_0);
+                    return undefined;
+                }
+                for (const item of table) {
+                    const {symbol, hidden} = item;
+                    let {matchSignature} = item;
+                    if (matchSignature !== undefined) {
+                        matchSignature = cloneSignature(matchSignature);
+                        let returnType = getReturnTypeOfSignature(matchSignature);
+                        let instantiatedSignature = matchSignature;
+                        if (matchSignature.typeParameters && matchSignature.typeParameters.length) {
+                            const context = createInferenceContext(matchSignature, InferenceFlags.NoDefault);
+                            inferTypes(context.inferences, type, returnType);
+                            instantiatedSignature = instantiateSignature(matchSignature, context, /*eraseTypeParameters*/ true);
+                            returnType = getReturnTypeOfSignature(instantiatedSignature);
+                        }
+                        if (isTypeRelatedTo(returnType, type, implicitsResolveRelation)) {
+                            if (hidden) {
+                                reportError(Diagnostics.Resolved_implicit_declaration_is_not_in_the_scope_at_the_query_0);
+                                return undefined;
+                            }
+                            // TODO: try checkCallExpression
+                            const parameters: Expression[] = instantiatedSignature.implicitParameters
+                                    ? instantiatedSignature.implicitParameters.map(
+                                    parameter => queryImplicitsResolution(getTypeOfSymbol(parameter), table, stackLength - 1) ||  createIdentifier("undefined"))
+                                    : [];
+                            const callee = createIdentifier(symbol.name);
+                            const links = getNodeLinks(callee);
+                            links.resolvedSymbol = symbol;
+                            const result = createCall(callee, /*typeArguments*/ undefined, parameters);
+                            result.implicitType = returnType;
+                            callee.parent = result;
+                            return result;
+                        }
+                    }
+                    else {
+                        const matchType = getTypeOfSymbol(symbol);
+                        if (isTypeRelatedTo(matchType, type, implicitsResolveRelation)) {
+                            if (hidden) {
+                                reportError(Diagnostics.Resolved_implicit_declaration_is_not_in_the_scope_at_the_query_0);
+                                return undefined;
+                            }
+                            const result = createIdentifier(symbol.name);
+                            const links = getNodeLinks(result);
+                            links.resolvedSymbol = symbol;
+                            links.resolvedType = result.implicitType = matchType;
+                            return result;
+                        }
+                    }
+                }
+                reportError(Diagnostics.No_implicits_declarations_matching_0);
+                return undefined;
+
+                function reportError(message: DiagnosticMessage) {
+                    if (reportErrors) {
+                        error(query, message, typeToString(type));
+                    }
+                }
+            }
+        }
+    }
     /** Like 'isDeclarationName', but returns true for LHS of `import { x as y }` or `export { x as y }`. */
     function isDeclarationNameOrImportPropertyName(name: Node): boolean {
         switch (name.parent.kind) {

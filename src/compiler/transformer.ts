@@ -11,6 +11,7 @@
 /// <reference path="transformers/module/module.ts" />
 /// <reference path="transformers/module/system.ts" />
 /// <reference path="transformers/module/es2015.ts" />
+/// <reference path="transformers/implicits.ts" />
 
 /* @internal */
 namespace ts {
@@ -45,6 +46,10 @@ namespace ts {
         const transformers: TransformerFactory<SourceFile>[] = [];
 
         addRange(transformers, customTransformers && customTransformers.before);
+
+        if (compilerOptions.implicits) {
+            transformers.push(resolveImplicits);
+        }
 
         transformers.push(transformTypeScript);
 

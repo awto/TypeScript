@@ -1955,6 +1955,10 @@ namespace ts {
                     verifyEmitFilePath(emitFileNames.declarationFilePath, emitFilesSeen);
                 });
             }
+            if (options.implicitCasts && !options.implicits) {
+                programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1, "implicitCasts", "implicits"));
+            }
+
 
             // Verify that all the emit files are unique and don't overwrite input files
             function verifyEmitFilePath(emitFileName: string, emitFilesSeen: FileMap<boolean>) {

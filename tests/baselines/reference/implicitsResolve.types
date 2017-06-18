@@ -1,0 +1,695 @@
+=== tests/cases/compiler/implicitsResolve.ts ===
+interface App<M, A> {
+>App : App<M, A>
+>M : M
+>A : A
+
+  _appBrand: {m:M,a:A};
+>_appBrand : { m: M; a: A; }
+>m : M
+>M : M
+>a : A
+>A : A
+}
+
+implicit const arrToApp = <A>(i: Array<A>) => <App<Array<any>, A>>(<any>i);
+>arrToApp : <A>(i: A[]) => App<any[], A>
+><A>(i: Array<A>) => <App<Array<any>, A>>(<any>i) : <A>(i: A[]) => App<any[], A>
+>A : A
+>i : A[]
+>Array : T[]
+>A : A
+><App<Array<any>, A>>(<any>i) : App<any[], A>
+>App : App<M, A>
+>Array : T[]
+>A : A
+>(<any>i) : any
+><any>i : any
+>i : A[]
+
+implicit const appToArr = <A>(i: App<Array<any>, A>) => <Array<A>>(<any>i);
+>appToArr : <A>(i: App<any[], A>) => A[]
+><A>(i: App<Array<any>, A>) => <Array<A>>(<any>i) : <A>(i: App<any[], A>) => A[]
+>A : A
+>i : App<any[], A>
+>App : App<M, A>
+>Array : T[]
+>A : A
+><Array<A>>(<any>i) : A[]
+>Array : T[]
+>A : A
+>(<any>i) : any
+><any>i : any
+>i : App<any[], A>
+
+interface Monad<M> {
+>Monad : Monad<M>
+>M : M
+
+  chain: <A, B>(arg: App<M, A>, fn: (arg: A) => App<M, B>) => App<M,B>;
+>chain : <A, B>(arg: App<M, A>, fn: (arg: A) => App<M, B>) => App<M, B>
+>A : A
+>B : B
+>arg : App<M, A>
+>App : App<M, A>
+>M : M
+>A : A
+>fn : (arg: A) => App<M, B>
+>arg : A
+>A : A
+>App : App<M, A>
+>M : M
+>B : B
+>App : App<M, A>
+>M : M
+>B : B
+
+  of: <A>(v: A) => App<M,A>;
+>of : <A>(v: A) => App<M, A>
+>A : A
+>v : A
+>A : A
+>App : App<M, A>
+>M : M
+>A : A
+}
+
+declare function liftM2<M,A,B,C>(implicit m: Monad<M>, f: (a: A, b: B) => C, a: App<M, A>, b: App<M, B>): App<M,C>;
+>liftM2 : <M, A, B, C>(f: (a: A, b: B) => C, a: App<M, A>, b: App<M, B>) => App<M, C>
+>M : M
+>A : A
+>B : B
+>C : C
+>m : Monad<M>
+>Monad : Monad<M>
+>M : M
+>f : (a: A, b: B) => C
+>a : A
+>A : A
+>b : B
+>B : B
+>C : C
+>a : App<M, A>
+>App : App<M, A>
+>M : M
+>A : A
+>b : App<M, B>
+>App : App<M, A>
+>M : M
+>B : B
+>App : App<M, A>
+>M : M
+>C : C
+
+function liftM<M,A,B>(implicit m: Monad<M>,
+>liftM : <M, A, B>(f: (a: A) => B, a: App<M, A>) => App<M, B>
+>M : M
+>A : A
+>B : B
+>m : Monad<M>
+>Monad : Monad<M>
+>M : M
+
+                      f: (a: A) => B, a: App<M, A>): App<M,B> {
+>f : (a: A) => B
+>a : A
+>A : A
+>B : B
+>a : App<M, A>
+>App : App<M, A>
+>M : M
+>A : A
+>App : App<M, A>
+>M : M
+>B : B
+
+  return ??.chain(a, (v: A) => ??.of(f(v)) as App<M, B>);
+>??.chain(a, (v: A) => ??.of(f(v)) as App<M, B>) : App<M, B>
+>??.chain : <A, B>(arg: App<M, A>, fn: (arg: A) => App<M, B>) => App<M, B>
+>chain : <A, B>(arg: App<M, A>, fn: (arg: A) => App<M, B>) => App<M, B>
+>a : App<M, A>
+>(v: A) => ??.of(f(v)) as App<M, B> : (v: A) => App<M, B>
+>v : A
+>A : A
+>??.of(f(v)) as App<M, B> : App<M, B>
+>??.of(f(v)) : App<M, B>
+>??.of : <A>(v: A) => App<M, A>
+>of : <A>(v: A) => App<M, A>
+>f(v) : B
+>f : (a: A) => B
+>v : A
+>App : App<M, A>
+>M : M
+>B : B
+}
+
+let mList: {
+>mList : { chain: <A, B>(v: A[], f: (v: A) => B[]) => B[]; of: <A>(v: A) => A[]; }
+
+  chain: <A, B>(v: A[], f: (v: A) => B[]) => B[],
+>chain : <A, B>(v: A[], f: (v: A) => B[]) => B[]
+>A : A
+>B : B
+>v : A[]
+>A : A
+>f : (v: A) => B[]
+>v : A
+>A : A
+>B : B
+>B : B
+
+  of: <A>(v: A) => A[]
+>of : <A>(v: A) => A[]
+>A : A
+>v : A
+>A : A
+>A : A
+
+};
+
+implicit const appList: Monad<any[]> = {
+>appList : Monad<any[]>
+>Monad : Monad<M>
+>{  chain: <A, B>(v: App<any[],A>, f: (v: A) => App<any[],B>): App<any[],B> => {    return mList.chain(v as A[], (i) => f(i) as B[]);  },  of: <A>(v: A): App<any[],A> => {    return mList.of(v);  }} : { chain: <A, B>(v: App<any[], A>, f: (v: A) => App<any[], B>) => App<any[], B>; of: <A>(v: A) => App<any[], A>; }
+
+  chain: <A, B>(v: App<any[],A>, f: (v: A) => App<any[],B>): App<any[],B> => {
+>chain : <A, B>(v: App<any[], A>, f: (v: A) => App<any[], B>) => App<any[], B>
+><A, B>(v: App<any[],A>, f: (v: A) => App<any[],B>): App<any[],B> => {    return mList.chain(v as A[], (i) => f(i) as B[]);  } : <A, B>(v: App<any[], A>, f: (v: A) => App<any[], B>) => App<any[], B>
+>A : A
+>B : B
+>v : App<any[], A>
+>App : App<M, A>
+>A : A
+>f : (v: A) => App<any[], B>
+>v : A
+>A : A
+>App : App<M, A>
+>B : B
+>App : App<M, A>
+>B : B
+
+    return mList.chain(v as A[], (i) => f(i) as B[]);
+>mList.chain(v as A[], (i) => f(i) as B[]) : App<any[], B>
+>mList.chain : <A, B>(v: A[], f: (v: A) => B[]) => B[]
+>mList : { chain: <A, B>(v: A[], f: (v: A) => B[]) => B[]; of: <A>(v: A) => A[]; }
+>chain : <A, B>(v: A[], f: (v: A) => B[]) => B[]
+>v as A[] : A[]
+>v : A[]
+>A : A
+>(i) => f(i) as B[] : (i: A) => B[]
+>i : A
+>f(i) as B[] : B[]
+>f(i) : B[]
+>f : (v: A) => App<any[], B>
+>i : A
+>B : B
+
+  },
+  of: <A>(v: A): App<any[],A> => {
+>of : <A>(v: A) => App<any[], A>
+><A>(v: A): App<any[],A> => {    return mList.of(v);  } : <A>(v: A) => App<any[], A>
+>A : A
+>v : A
+>A : A
+>App : App<M, A>
+>A : A
+
+    return mList.of(v);
+>mList.of(v) : App<any[], A>
+>mList.of : <A>(v: A) => A[]
+>mList : { chain: <A, B>(v: A[], f: (v: A) => B[]) => B[]; of: <A>(v: A) => A[]; }
+>of : <A>(v: A) => A[]
+>v : A
+  }
+};
+
+const liftMRes: number[] = liftM((a:number) => 10*a, [1]);
+>liftMRes : number[]
+>liftM((a:number) => 10*a, [1]) : number[]
+>liftM : <M, A, B>(f: (a: A) => B, a: App<M, A>) => App<M, B>
+>(a:number) => 10*a : (a: number) => number
+>a : number
+>10*a : number
+>10 : 10
+>a : number
+>[1] : App<{}, number>
+>1 : 1
+
+const liftM2Res: number[] = liftM2((a:number, b:number) => a + b, [1], [2]);
+>liftM2Res : number[]
+>liftM2((a:number, b:number) => a + b, [1], [2]) : number[]
+>liftM2 : <M, A, B, C>(f: (a: A, b: B) => C, a: App<M, A>, b: App<M, B>) => App<M, C>
+>(a:number, b:number) => a + b : (a: number, b: number) => number
+>a : number
+>b : number
+>a + b : number
+>a : number
+>b : number
+>[1] : App<{}, number>
+>1 : 1
+>[2] : App<{}, number>
+>2 : 2
+
+function strToNumCheck() {
+>strToNumCheck : () => void
+
+  implicit const strToNum = (str:string) => +str;
+>strToNum : (str: string) => number
+>(str:string) => +str : (str: string) => number
+>str : string
+>+str : number
+>str : string
+
+  function a(i:number):void {
+>a : (i: number) => void
+>i : number
+  }
+  a("a");
+>a("a") : void
+>a : (i: number) => void
+>"a" : number
+
+  let n: number = "a";
+>n : number
+>"a" : number
+}
+
+implicit const c1 = <T>(implicit t: T) => ({value:t});
+>c1 : <T>() => { value: T; }
+><T>(implicit t: T) => ({value:t}) : <T>() => { value: T; }
+>T : T
+>t : T
+>T : T
+>({value:t}) : { value: T; }
+>{value:t} : { value: T; }
+>value : T
+>t : T
+
+implicit const c2 = 2;
+>c2 : 2
+>2 : 2
+
+const e1 = <T>(implicit t: {value:T}) => ({value:t.value});
+>e1 : <T>() => { value: T; }
+><T>(implicit t: {value:T}) => ({value:t.value}) : <T>() => { value: T; }
+>T : T
+>t : { value: T; }
+>value : T
+>T : T
+>({value:t.value}) : { value: T; }
+>{value:t.value} : { value: T; }
+>value : T
+>t.value : T
+>t : { value: T; }
+>value : T
+
+declare function e2<T>(implicit t: {value:T}, v: T): void;
+>e2 : <T>(v: T) => void
+>T : T
+>t : { value: T; }
+>value : T
+>T : T
+>v : T
+>T : T
+
+declare function e3<T>(v:{value: T}): {value:T};
+>e3 : <T>(v: { value: T; }) => { value: T; }
+>T : T
+>v : { value: T; }
+>value : T
+>T : T
+>value : T
+>T : T
+
+declare function e4(v:{value:number}): void;
+>e4 : (v: { value: number; }) => void
+>v : { value: number; }
+>value : number
+
+let a: {value: number} = e1(); // => e1(c1(c2));
+>a : { value: number; }
+>value : number
+>e1() : { value: number; }
+>e1 : <T>() => { value: T; }
+
+a = ??;                     // => a = c1(c2);
+>a = ?? : { value: number; }
+>a : { value: number; }
+
+e2(10);                        // => e2(c1(c2),10)
+>e2(10) : void
+>e2 : <T>(v: T) => void
+>10 : 10
+
+// a = e3(??);                 // => a = e3(c1(c2))
+e4(??);                     // => e4(c1(c2))
+>e4(??) : void
+>e4 : (v: { value: number; }) => void
+
+e4(e1());                      // e4(e1(c1(c2)));
+>e4(e1()) : void
+>e4 : (v: { value: number; }) => void
+>e1() : { value: number; }
+>e1 : <T>() => { value: T; }
+
+implicit const some1 = { fun(a:{value:number}) { return a.value + 1; } };
+>some1 : { fun(a: { value: number; }): number; }
+>{ fun(a:{value:number}) { return a.value + 1; } } : { fun(a: { value: number; }): number; }
+>fun : (a: { value: number; }) => number
+>a : { value: number; }
+>value : number
+>a.value + 1 : number
+>a.value : number
+>a : { value: number; }
+>value : number
+>1 : 1
+
+implicit const some2 = 2;
+>some2 : 2
+>2 : 2
+
+implicit const some3 = (implicit a: number) => ({value:a+1});
+>some3 : () => { value: number; }
+>(implicit a: number) => ({value:a+1}) : () => { value: number; }
+>a : number
+>({value:a+1}) : { value: number; }
+>{value:a+1} : { value: number; }
+>value : number
+>a+1 : number
+>a : number
+>1 : 1
+
+?? as number;
+>?? as number : number
+
+const n: number = ??.fun(??)
+>n : number
+>??.fun(??) : number
+>??.fun : (a: { value: number; }) => number
+>fun : (a: { value: number; }) => number
+
+function b() {
+>b : () => void
+
+  implicit const f = function f<A>(x:A):A { throw new Error(); }
+>f : <A>(x: A) => A
+>function f<A>(x:A):A { throw new Error(); } : <A>(x: A) => A
+>f : <A>(x: A) => A
+>A : A
+>x : A
+>A : A
+>A : A
+>new Error() : Error
+>Error : ErrorConstructor
+
+  implicit const g = function f(n:number):number { return n + 1; };
+>g : (n: number) => number
+>function f(n:number):number { return n + 1; } : (n: number) => number
+>f : (n: number) => number
+>n : number
+>n + 1 : number
+>n : number
+>1 : 1
+
+  ??(1) // ===> g
+>??(1) : number
+>1 : 1
+}
+
+function c() {
+>c : () => number
+
+  implicit const a: number = 1;
+>a : number
+>1 : 1
+
+  implicit const b: boolean = true;
+>b : boolean
+>true : true
+
+  implicit const c = (implicit n: boolean) => n ? 2 : 0;
+>c : () => 2 | 0
+>(implicit n: boolean) => n ? 2 : 0 : () => 2 | 0
+>n : boolean
+>n ? 2 : 0 : 2 | 0
+>n : boolean
+>2 : 2
+>0 : 0
+
+  return ?? as number; // ===> c(b)
+>?? as number : number
+}
+
+function d() {
+>d : () => void
+
+  implicit const c = function c<T>(n:T):T { throw new Error(); }
+>c : <T>(n: T) => T
+>function c<T>(n:T):T { throw new Error(); } : <T>(n: T) => T
+>c : <T>(n: T) => T
+>T : T
+>n : T
+>T : T
+>T : T
+>new Error() : Error
+>Error : ErrorConstructor
+
+  const b:number = ??(1) // ==> c(1)
+>b : number
+>??(1) : 1
+>1 : 1
+
+  const bR:number = c(1)
+>bR : number
+>c(1) : 1
+>c : <T>(n: T) => T
+>1 : 1
+}
+
+function e() {
+>e : () => void
+
+  implicit const c = <T>(implicit  v:{value:T}, implicit c: {value:boolean}, n:T) => c.value ? v.value : n
+>c : <T>(n: T) => T
+><T>(implicit  v:{value:T}, implicit c: {value:boolean}, n:T) => c.value ? v.value : n : <T>(n: T) => T
+>T : T
+>v : { value: T; }
+>value : T
+>T : T
+>c : { value: boolean; }
+>value : boolean
+>n : T
+>T : T
+>c.value ? v.value : n : T
+>c.value : boolean
+>c : { value: boolean; }
+>value : boolean
+>v.value : T
+>v : { value: T; }
+>value : T
+>n : T
+
+  implicit let a = {value: 10}
+>a : { value: number; }
+>{value: 10} : { value: number; }
+>value : number
+>10 : 10
+
+  implicit let f = {value: true}
+>f : { value: boolean; }
+>{value: true} : { value: boolean; }
+>value : boolean
+>true : true
+
+  const e: number = 1
+>e : number
+>1 : 1
+
+  const b1:number = ??(e) // ==> c(a,f,e)
+>b1 : number
+>??(e) : number
+>e : number
+}
+
+function f() {
+>f : () => void
+
+  implicit const g = function f<T>(n:{value:T}):{value:T} { return n; };
+>g : <T>(n: { value: T; }) => { value: T; }
+>function f<T>(n:{value:T}):{value:T} { return n; } : <T>(n: { value: T; }) => { value: T; }
+>f : <T>(n: { value: T; }) => { value: T; }
+>T : T
+>n : { value: T; }
+>value : T
+>T : T
+>value : T
+>T : T
+>n : { value: T; }
+
+  ??({value:1}) // ===> g
+>??({value:1}) : { value: number; }
+>{value:1} : { value: number; }
+>value : number
+>1 : 1
+}
+
+interface Monoid<T> {
+>Monoid : Monoid<T>
+>T : T
+
+  add: (a: T, b: T) => T;
+>add : (a: T, b: T) => T
+>a : T
+>T : T
+>b : T
+>T : T
+>T : T
+
+  unit: T;
+>unit : T
+>T : T
+
+};
+
+const multMonoidDef = {
+>multMonoidDef : { add: (l: number, r: number) => number; unit: number; }
+>{  add: (l: number, r: number) => l * r,  unit: 1} : { add: (l: number, r: number) => number; unit: number; }
+
+  add: (l: number, r: number) => l * r,
+>add : (l: number, r: number) => number
+>(l: number, r: number) => l * r : (l: number, r: number) => number
+>l : number
+>r : number
+>l * r : number
+>l : number
+>r : number
+
+  unit: 1
+>unit : number
+>1 : 1
+
+};
+
+const sumMonoidDef = {
+>sumMonoidDef : { add: (l: number, r: number) => number; unit: number; }
+>{  add: (l: number, r: number) => l + r,  unit: 0} : { add: (l: number, r: number) => number; unit: number; }
+
+  add: (l: number, r: number) => l + r,
+>add : (l: number, r: number) => number
+>(l: number, r: number) => l + r : (l: number, r: number) => number
+>l : number
+>r : number
+>l + r : number
+>l : number
+>r : number
+
+  unit: 0
+>unit : number
+>0 : 0
+
+};
+
+const arrMonoidDefAbs = <T>(): Monoid<T[]> => ({
+>arrMonoidDefAbs : <T>() => Monoid<T[]>
+><T>(): Monoid<T[]> => ({  add: (l: T[], r: T[]) => l.concat(r),  unit: []}) : <T>() => Monoid<T[]>
+>T : T
+>Monoid : Monoid<T>
+>T : T
+>({  add: (l: T[], r: T[]) => l.concat(r),  unit: []}) : { add: (l: T[], r: T[]) => T[]; unit: undefined[]; }
+>{  add: (l: T[], r: T[]) => l.concat(r),  unit: []} : { add: (l: T[], r: T[]) => T[]; unit: undefined[]; }
+
+  add: (l: T[], r: T[]) => l.concat(r),
+>add : (l: T[], r: T[]) => T[]
+>(l: T[], r: T[]) => l.concat(r) : (l: T[], r: T[]) => T[]
+>l : T[]
+>T : T
+>r : T[]
+>T : T
+>l.concat(r) : T[]
+>l.concat : { (...items: T[][]): T[]; (...items: (T | T[])[]): T[]; }
+>l : T[]
+>concat : { (...items: T[][]): T[]; (...items: (T | T[])[]): T[]; }
+>r : T[]
+
+  unit: []
+>unit : undefined[]
+>[] : undefined[]
+
+});
+
+function arrReduce<T>(implicit m: Monoid<T>, arr: T[]) {
+>arrReduce : <T>(arr: T[]) => T
+>T : T
+>m : Monoid<T>
+>Monoid : Monoid<T>
+>T : T
+>arr : T[]
+>T : T
+
+  return arr.reduce((a, b) => ??.add(a, b), ??.unit);
+>arr.reduce((a, b) => ??.add(a, b), ??.unit) : T
+>arr.reduce : { (callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue?: T): T; <U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U; }
+>arr : T[]
+>reduce : { (callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue?: T): T; <U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U; }
+>(a, b) => ??.add(a, b) : (a: T, b: T) => T
+>a : T
+>b : T
+>??.add(a, b) : T
+>??.add : (a: T, b: T) => T
+>add : (a: T, b: T) => T
+>a : T
+>b : T
+>??.unit : T
+>unit : T
+}
+
+function monoidsTest() {
+>monoidsTest : () => void
+
+  implicit const arrMonoid = arrMonoidDefAbs;
+>arrMonoid : <T>() => Monoid<T[]>
+>arrMonoidDefAbs : <T>() => Monoid<T[]>
+
+  implicit const numMonoid = multMonoidDef;
+>numMonoid : { add: (l: number, r: number) => number; unit: number; }
+>multMonoidDef : { add: (l: number, r: number) => number; unit: number; }
+
+  const n = arrReduce([1,2,3,4]);
+>n : number
+>arrReduce([1,2,3,4]) : number
+>arrReduce : <T>(arr: T[]) => T
+>[1,2,3,4] : number[]
+>1 : 1
+>2 : 2
+>3 : 3
+>4 : 4
+
+  const m = arrReduce([[1,2],[3,4]]);
+>m : number[]
+>arrReduce([[1,2],[3,4]]) : number[]
+>arrReduce : <T>(arr: T[]) => T
+>[[1,2],[3,4]] : number[][]
+>[1,2] : number[]
+>1 : 1
+>2 : 2
+>[3,4] : number[]
+>3 : 3
+>4 : 4
+  {
+    implicit const sumNumMonoid = sumMonoidDef;
+>sumNumMonoid : { add: (l: number, r: number) => number; unit: number; }
+>sumMonoidDef : { add: (l: number, r: number) => number; unit: number; }
+
+    const n = arrReduce([1,2,3,4,5]);
+>n : number
+>arrReduce([1,2,3,4,5]) : number
+>arrReduce : <T>(arr: T[]) => T
+>[1,2,3,4,5] : number[]
+>1 : 1
+>2 : 2
+>3 : 3
+>4 : 4
+>5 : 5
+  }
+}
+

@@ -1,0 +1,559 @@
+=== tests/cases/compiler/implicitsResolve.ts ===
+interface App<M, A> {
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 0, 14))
+>A : Symbol(A, Decl(implicitsResolve.ts, 0, 16))
+
+  _appBrand: {m:M,a:A};
+>_appBrand : Symbol(App._appBrand, Decl(implicitsResolve.ts, 0, 21))
+>m : Symbol(m, Decl(implicitsResolve.ts, 1, 14))
+>M : Symbol(M, Decl(implicitsResolve.ts, 0, 14))
+>a : Symbol(a, Decl(implicitsResolve.ts, 1, 18))
+>A : Symbol(A, Decl(implicitsResolve.ts, 0, 16))
+}
+
+implicit const arrToApp = <A>(i: Array<A>) => <App<Array<any>, A>>(<any>i);
+>arrToApp : Symbol(arrToApp, Decl(implicitsResolve.ts, 4, 14))
+>A : Symbol(A, Decl(implicitsResolve.ts, 4, 27))
+>i : Symbol(i, Decl(implicitsResolve.ts, 4, 30))
+>Array : Symbol(Array, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>A : Symbol(A, Decl(implicitsResolve.ts, 4, 27))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>Array : Symbol(Array, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>A : Symbol(A, Decl(implicitsResolve.ts, 4, 27))
+>i : Symbol(i, Decl(implicitsResolve.ts, 4, 30))
+
+implicit const appToArr = <A>(i: App<Array<any>, A>) => <Array<A>>(<any>i);
+>appToArr : Symbol(appToArr, Decl(implicitsResolve.ts, 6, 14))
+>A : Symbol(A, Decl(implicitsResolve.ts, 6, 27))
+>i : Symbol(i, Decl(implicitsResolve.ts, 6, 30))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>Array : Symbol(Array, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>A : Symbol(A, Decl(implicitsResolve.ts, 6, 27))
+>Array : Symbol(Array, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>A : Symbol(A, Decl(implicitsResolve.ts, 6, 27))
+>i : Symbol(i, Decl(implicitsResolve.ts, 6, 30))
+
+interface Monad<M> {
+>Monad : Symbol(Monad, Decl(implicitsResolve.ts, 6, 75))
+>M : Symbol(M, Decl(implicitsResolve.ts, 8, 16))
+
+  chain: <A, B>(arg: App<M, A>, fn: (arg: A) => App<M, B>) => App<M,B>;
+>chain : Symbol(Monad.chain, Decl(implicitsResolve.ts, 8, 20))
+>A : Symbol(A, Decl(implicitsResolve.ts, 9, 10))
+>B : Symbol(B, Decl(implicitsResolve.ts, 9, 12))
+>arg : Symbol(arg, Decl(implicitsResolve.ts, 9, 16))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 8, 16))
+>A : Symbol(A, Decl(implicitsResolve.ts, 9, 10))
+>fn : Symbol(fn, Decl(implicitsResolve.ts, 9, 31))
+>arg : Symbol(arg, Decl(implicitsResolve.ts, 9, 37))
+>A : Symbol(A, Decl(implicitsResolve.ts, 9, 10))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 8, 16))
+>B : Symbol(B, Decl(implicitsResolve.ts, 9, 12))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 8, 16))
+>B : Symbol(B, Decl(implicitsResolve.ts, 9, 12))
+
+  of: <A>(v: A) => App<M,A>;
+>of : Symbol(Monad.of, Decl(implicitsResolve.ts, 9, 71))
+>A : Symbol(A, Decl(implicitsResolve.ts, 10, 7))
+>v : Symbol(v, Decl(implicitsResolve.ts, 10, 10))
+>A : Symbol(A, Decl(implicitsResolve.ts, 10, 7))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 8, 16))
+>A : Symbol(A, Decl(implicitsResolve.ts, 10, 7))
+}
+
+declare function liftM2<M,A,B,C>(implicit m: Monad<M>, f: (a: A, b: B) => C, a: App<M, A>, b: App<M, B>): App<M,C>;
+>liftM2 : Symbol(liftM2, Decl(implicitsResolve.ts, 11, 1))
+>M : Symbol(M, Decl(implicitsResolve.ts, 13, 24))
+>A : Symbol(A, Decl(implicitsResolve.ts, 13, 26))
+>B : Symbol(B, Decl(implicitsResolve.ts, 13, 28))
+>C : Symbol(C, Decl(implicitsResolve.ts, 13, 30))
+>m : Symbol(m, Decl(implicitsResolve.ts, 13, 33))
+>Monad : Symbol(Monad, Decl(implicitsResolve.ts, 6, 75))
+>M : Symbol(M, Decl(implicitsResolve.ts, 13, 24))
+>f : Symbol(f, Decl(implicitsResolve.ts, 13, 54))
+>a : Symbol(a, Decl(implicitsResolve.ts, 13, 59))
+>A : Symbol(A, Decl(implicitsResolve.ts, 13, 26))
+>b : Symbol(b, Decl(implicitsResolve.ts, 13, 64))
+>B : Symbol(B, Decl(implicitsResolve.ts, 13, 28))
+>C : Symbol(C, Decl(implicitsResolve.ts, 13, 30))
+>a : Symbol(a, Decl(implicitsResolve.ts, 13, 76))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 13, 24))
+>A : Symbol(A, Decl(implicitsResolve.ts, 13, 26))
+>b : Symbol(b, Decl(implicitsResolve.ts, 13, 90))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 13, 24))
+>B : Symbol(B, Decl(implicitsResolve.ts, 13, 28))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 13, 24))
+>C : Symbol(C, Decl(implicitsResolve.ts, 13, 30))
+
+function liftM<M,A,B>(implicit m: Monad<M>,
+>liftM : Symbol(liftM, Decl(implicitsResolve.ts, 13, 115))
+>M : Symbol(M, Decl(implicitsResolve.ts, 15, 15))
+>A : Symbol(A, Decl(implicitsResolve.ts, 15, 17))
+>B : Symbol(B, Decl(implicitsResolve.ts, 15, 19))
+>m : Symbol(m, Decl(implicitsResolve.ts, 15, 22))
+>Monad : Symbol(Monad, Decl(implicitsResolve.ts, 6, 75))
+>M : Symbol(M, Decl(implicitsResolve.ts, 15, 15))
+
+                      f: (a: A) => B, a: App<M, A>): App<M,B> {
+>f : Symbol(f, Decl(implicitsResolve.ts, 15, 43))
+>a : Symbol(a, Decl(implicitsResolve.ts, 16, 26))
+>A : Symbol(A, Decl(implicitsResolve.ts, 15, 17))
+>B : Symbol(B, Decl(implicitsResolve.ts, 15, 19))
+>a : Symbol(a, Decl(implicitsResolve.ts, 16, 37))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 15, 15))
+>A : Symbol(A, Decl(implicitsResolve.ts, 15, 17))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 15, 15))
+>B : Symbol(B, Decl(implicitsResolve.ts, 15, 19))
+
+  return ??.chain(a, (v: A) => ??.of(f(v)) as App<M, B>);
+>??.chain : Symbol(Monad.chain, Decl(implicitsResolve.ts, 8, 20))
+>chain : Symbol(Monad.chain, Decl(implicitsResolve.ts, 8, 20))
+>a : Symbol(a, Decl(implicitsResolve.ts, 16, 37))
+>v : Symbol(v, Decl(implicitsResolve.ts, 17, 22))
+>A : Symbol(A, Decl(implicitsResolve.ts, 15, 17))
+>??.of : Symbol(Monad.of, Decl(implicitsResolve.ts, 9, 71))
+>of : Symbol(Monad.of, Decl(implicitsResolve.ts, 9, 71))
+>f : Symbol(f, Decl(implicitsResolve.ts, 15, 43))
+>v : Symbol(v, Decl(implicitsResolve.ts, 17, 22))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>M : Symbol(M, Decl(implicitsResolve.ts, 15, 15))
+>B : Symbol(B, Decl(implicitsResolve.ts, 15, 19))
+}
+
+let mList: {
+>mList : Symbol(mList, Decl(implicitsResolve.ts, 20, 3))
+
+  chain: <A, B>(v: A[], f: (v: A) => B[]) => B[],
+>chain : Symbol(chain, Decl(implicitsResolve.ts, 20, 12))
+>A : Symbol(A, Decl(implicitsResolve.ts, 21, 10))
+>B : Symbol(B, Decl(implicitsResolve.ts, 21, 12))
+>v : Symbol(v, Decl(implicitsResolve.ts, 21, 16))
+>A : Symbol(A, Decl(implicitsResolve.ts, 21, 10))
+>f : Symbol(f, Decl(implicitsResolve.ts, 21, 23))
+>v : Symbol(v, Decl(implicitsResolve.ts, 21, 28))
+>A : Symbol(A, Decl(implicitsResolve.ts, 21, 10))
+>B : Symbol(B, Decl(implicitsResolve.ts, 21, 12))
+>B : Symbol(B, Decl(implicitsResolve.ts, 21, 12))
+
+  of: <A>(v: A) => A[]
+>of : Symbol(of, Decl(implicitsResolve.ts, 21, 49))
+>A : Symbol(A, Decl(implicitsResolve.ts, 22, 7))
+>v : Symbol(v, Decl(implicitsResolve.ts, 22, 10))
+>A : Symbol(A, Decl(implicitsResolve.ts, 22, 7))
+>A : Symbol(A, Decl(implicitsResolve.ts, 22, 7))
+
+};
+
+implicit const appList: Monad<any[]> = {
+>appList : Symbol(appList, Decl(implicitsResolve.ts, 25, 14))
+>Monad : Symbol(Monad, Decl(implicitsResolve.ts, 6, 75))
+
+  chain: <A, B>(v: App<any[],A>, f: (v: A) => App<any[],B>): App<any[],B> => {
+>chain : Symbol(chain, Decl(implicitsResolve.ts, 25, 40))
+>A : Symbol(A, Decl(implicitsResolve.ts, 26, 10))
+>B : Symbol(B, Decl(implicitsResolve.ts, 26, 12))
+>v : Symbol(v, Decl(implicitsResolve.ts, 26, 16))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>A : Symbol(A, Decl(implicitsResolve.ts, 26, 10))
+>f : Symbol(f, Decl(implicitsResolve.ts, 26, 32))
+>v : Symbol(v, Decl(implicitsResolve.ts, 26, 37))
+>A : Symbol(A, Decl(implicitsResolve.ts, 26, 10))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>B : Symbol(B, Decl(implicitsResolve.ts, 26, 12))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>B : Symbol(B, Decl(implicitsResolve.ts, 26, 12))
+
+    return mList.chain(v as A[], (i) => f(i) as B[]);
+>mList.chain : Symbol(chain, Decl(implicitsResolve.ts, 20, 12))
+>mList : Symbol(mList, Decl(implicitsResolve.ts, 20, 3))
+>chain : Symbol(chain, Decl(implicitsResolve.ts, 20, 12))
+>v : Symbol(v, Decl(implicitsResolve.ts, 26, 16))
+>A : Symbol(A, Decl(implicitsResolve.ts, 26, 10))
+>i : Symbol(i, Decl(implicitsResolve.ts, 27, 34))
+>f : Symbol(f, Decl(implicitsResolve.ts, 26, 32))
+>i : Symbol(i, Decl(implicitsResolve.ts, 27, 34))
+>B : Symbol(B, Decl(implicitsResolve.ts, 26, 12))
+
+  },
+  of: <A>(v: A): App<any[],A> => {
+>of : Symbol(of, Decl(implicitsResolve.ts, 28, 4))
+>A : Symbol(A, Decl(implicitsResolve.ts, 29, 7))
+>v : Symbol(v, Decl(implicitsResolve.ts, 29, 10))
+>A : Symbol(A, Decl(implicitsResolve.ts, 29, 7))
+>App : Symbol(App, Decl(implicitsResolve.ts, 0, 0))
+>A : Symbol(A, Decl(implicitsResolve.ts, 29, 7))
+
+    return mList.of(v);
+>mList.of : Symbol(of, Decl(implicitsResolve.ts, 21, 49))
+>mList : Symbol(mList, Decl(implicitsResolve.ts, 20, 3))
+>of : Symbol(of, Decl(implicitsResolve.ts, 21, 49))
+>v : Symbol(v, Decl(implicitsResolve.ts, 29, 10))
+  }
+};
+
+const liftMRes: number[] = liftM((a:number) => 10*a, [1]);
+>liftMRes : Symbol(liftMRes, Decl(implicitsResolve.ts, 34, 5))
+>liftM : Symbol(liftM, Decl(implicitsResolve.ts, 13, 115))
+>a : Symbol(a, Decl(implicitsResolve.ts, 34, 34))
+>a : Symbol(a, Decl(implicitsResolve.ts, 34, 34))
+
+const liftM2Res: number[] = liftM2((a:number, b:number) => a + b, [1], [2]);
+>liftM2Res : Symbol(liftM2Res, Decl(implicitsResolve.ts, 35, 5))
+>liftM2 : Symbol(liftM2, Decl(implicitsResolve.ts, 11, 1))
+>a : Symbol(a, Decl(implicitsResolve.ts, 35, 36))
+>b : Symbol(b, Decl(implicitsResolve.ts, 35, 45))
+>a : Symbol(a, Decl(implicitsResolve.ts, 35, 36))
+>b : Symbol(b, Decl(implicitsResolve.ts, 35, 45))
+
+function strToNumCheck() {
+>strToNumCheck : Symbol(strToNumCheck, Decl(implicitsResolve.ts, 35, 76))
+
+  implicit const strToNum = (str:string) => +str;
+>strToNum : Symbol(strToNum, Decl(implicitsResolve.ts, 38, 16))
+>str : Symbol(str, Decl(implicitsResolve.ts, 38, 29))
+>str : Symbol(str, Decl(implicitsResolve.ts, 38, 29))
+
+  function a(i:number):void {
+>a : Symbol(a, Decl(implicitsResolve.ts, 38, 49))
+>i : Symbol(i, Decl(implicitsResolve.ts, 39, 13))
+  }
+  a("a");
+>a : Symbol(a, Decl(implicitsResolve.ts, 38, 49))
+
+  let n: number = "a";
+>n : Symbol(n, Decl(implicitsResolve.ts, 42, 5))
+}
+
+implicit const c1 = <T>(implicit t: T) => ({value:t});
+>c1 : Symbol(c1, Decl(implicitsResolve.ts, 45, 14))
+>T : Symbol(T, Decl(implicitsResolve.ts, 45, 21))
+>t : Symbol(t, Decl(implicitsResolve.ts, 45, 24))
+>T : Symbol(T, Decl(implicitsResolve.ts, 45, 21))
+>value : Symbol(value, Decl(implicitsResolve.ts, 45, 44))
+>t : Symbol(t, Decl(implicitsResolve.ts, 45, 24))
+
+implicit const c2 = 2;
+>c2 : Symbol(c2, Decl(implicitsResolve.ts, 46, 14))
+
+const e1 = <T>(implicit t: {value:T}) => ({value:t.value});
+>e1 : Symbol(e1, Decl(implicitsResolve.ts, 47, 5))
+>T : Symbol(T, Decl(implicitsResolve.ts, 47, 12))
+>t : Symbol(t, Decl(implicitsResolve.ts, 47, 15))
+>value : Symbol(value, Decl(implicitsResolve.ts, 47, 28))
+>T : Symbol(T, Decl(implicitsResolve.ts, 47, 12))
+>value : Symbol(value, Decl(implicitsResolve.ts, 47, 43))
+>t.value : Symbol(value, Decl(implicitsResolve.ts, 47, 28))
+>t : Symbol(t, Decl(implicitsResolve.ts, 47, 15))
+>value : Symbol(value, Decl(implicitsResolve.ts, 47, 28))
+
+declare function e2<T>(implicit t: {value:T}, v: T): void;
+>e2 : Symbol(e2, Decl(implicitsResolve.ts, 47, 59))
+>T : Symbol(T, Decl(implicitsResolve.ts, 48, 20))
+>t : Symbol(t, Decl(implicitsResolve.ts, 48, 23))
+>value : Symbol(value, Decl(implicitsResolve.ts, 48, 36))
+>T : Symbol(T, Decl(implicitsResolve.ts, 48, 20))
+>v : Symbol(v, Decl(implicitsResolve.ts, 48, 45))
+>T : Symbol(T, Decl(implicitsResolve.ts, 48, 20))
+
+declare function e3<T>(v:{value: T}): {value:T};
+>e3 : Symbol(e3, Decl(implicitsResolve.ts, 48, 58))
+>T : Symbol(T, Decl(implicitsResolve.ts, 49, 20))
+>v : Symbol(v, Decl(implicitsResolve.ts, 49, 23))
+>value : Symbol(value, Decl(implicitsResolve.ts, 49, 26))
+>T : Symbol(T, Decl(implicitsResolve.ts, 49, 20))
+>value : Symbol(value, Decl(implicitsResolve.ts, 49, 39))
+>T : Symbol(T, Decl(implicitsResolve.ts, 49, 20))
+
+declare function e4(v:{value:number}): void;
+>e4 : Symbol(e4, Decl(implicitsResolve.ts, 49, 48))
+>v : Symbol(v, Decl(implicitsResolve.ts, 50, 20))
+>value : Symbol(value, Decl(implicitsResolve.ts, 50, 23))
+
+let a: {value: number} = e1(); // => e1(c1(c2));
+>a : Symbol(a, Decl(implicitsResolve.ts, 51, 3))
+>value : Symbol(value, Decl(implicitsResolve.ts, 51, 8))
+>e1 : Symbol(e1, Decl(implicitsResolve.ts, 47, 5))
+
+a = ??;                     // => a = c1(c2);
+>a : Symbol(a, Decl(implicitsResolve.ts, 51, 3))
+
+e2(10);                        // => e2(c1(c2),10)
+>e2 : Symbol(e2, Decl(implicitsResolve.ts, 47, 59))
+
+// a = e3(??);                 // => a = e3(c1(c2))
+e4(??);                     // => e4(c1(c2))
+>e4 : Symbol(e4, Decl(implicitsResolve.ts, 49, 48))
+
+e4(e1());                      // e4(e1(c1(c2)));
+>e4 : Symbol(e4, Decl(implicitsResolve.ts, 49, 48))
+>e1 : Symbol(e1, Decl(implicitsResolve.ts, 47, 5))
+
+implicit const some1 = { fun(a:{value:number}) { return a.value + 1; } };
+>some1 : Symbol(some1, Decl(implicitsResolve.ts, 58, 14))
+>fun : Symbol(fun, Decl(implicitsResolve.ts, 58, 24))
+>a : Symbol(a, Decl(implicitsResolve.ts, 58, 29))
+>value : Symbol(value, Decl(implicitsResolve.ts, 58, 32))
+>a.value : Symbol(value, Decl(implicitsResolve.ts, 58, 32))
+>a : Symbol(a, Decl(implicitsResolve.ts, 58, 29))
+>value : Symbol(value, Decl(implicitsResolve.ts, 58, 32))
+
+implicit const some2 = 2;
+>some2 : Symbol(some2, Decl(implicitsResolve.ts, 59, 14))
+
+implicit const some3 = (implicit a: number) => ({value:a+1});
+>some3 : Symbol(some3, Decl(implicitsResolve.ts, 60, 14))
+>a : Symbol(a, Decl(implicitsResolve.ts, 60, 24))
+>value : Symbol(value, Decl(implicitsResolve.ts, 60, 49))
+>a : Symbol(a, Decl(implicitsResolve.ts, 60, 24))
+
+?? as number;
+const n: number = ??.fun(??)
+>n : Symbol(n, Decl(implicitsResolve.ts, 63, 5))
+>??.fun : Symbol(fun, Decl(implicitsResolve.ts, 58, 24))
+>fun : Symbol(fun, Decl(implicitsResolve.ts, 58, 24))
+
+function b() {
+>b : Symbol(b, Decl(implicitsResolve.ts, 63, 28))
+
+  implicit const f = function f<A>(x:A):A { throw new Error(); }
+>f : Symbol(f, Decl(implicitsResolve.ts, 66, 16))
+>f : Symbol(f, Decl(implicitsResolve.ts, 66, 20))
+>A : Symbol(A, Decl(implicitsResolve.ts, 66, 32))
+>x : Symbol(x, Decl(implicitsResolve.ts, 66, 35))
+>A : Symbol(A, Decl(implicitsResolve.ts, 66, 32))
+>A : Symbol(A, Decl(implicitsResolve.ts, 66, 32))
+>Error : Symbol(Error, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+
+  implicit const g = function f(n:number):number { return n + 1; };
+>g : Symbol(g, Decl(implicitsResolve.ts, 67, 16))
+>f : Symbol(f, Decl(implicitsResolve.ts, 67, 20))
+>n : Symbol(n, Decl(implicitsResolve.ts, 67, 32))
+>n : Symbol(n, Decl(implicitsResolve.ts, 67, 32))
+
+  ??(1) // ===> g
+}
+
+function c() {
+>c : Symbol(c, Decl(implicitsResolve.ts, 69, 1))
+
+  implicit const a: number = 1;
+>a : Symbol(a, Decl(implicitsResolve.ts, 72, 16))
+
+  implicit const b: boolean = true;
+>b : Symbol(b, Decl(implicitsResolve.ts, 73, 16))
+
+  implicit const c = (implicit n: boolean) => n ? 2 : 0;
+>c : Symbol(c, Decl(implicitsResolve.ts, 74, 16))
+>n : Symbol(n, Decl(implicitsResolve.ts, 74, 22))
+>n : Symbol(n, Decl(implicitsResolve.ts, 74, 22))
+
+  return ?? as number; // ===> c(b)
+}
+
+function d() {
+>d : Symbol(d, Decl(implicitsResolve.ts, 76, 1))
+
+  implicit const c = function c<T>(n:T):T { throw new Error(); }
+>c : Symbol(c, Decl(implicitsResolve.ts, 79, 16))
+>c : Symbol(c, Decl(implicitsResolve.ts, 79, 20))
+>T : Symbol(T, Decl(implicitsResolve.ts, 79, 32))
+>n : Symbol(n, Decl(implicitsResolve.ts, 79, 35))
+>T : Symbol(T, Decl(implicitsResolve.ts, 79, 32))
+>T : Symbol(T, Decl(implicitsResolve.ts, 79, 32))
+>Error : Symbol(Error, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+
+  const b:number = ??(1) // ==> c(1)
+>b : Symbol(b, Decl(implicitsResolve.ts, 80, 7))
+
+  const bR:number = c(1)
+>bR : Symbol(bR, Decl(implicitsResolve.ts, 81, 7))
+>c : Symbol(c, Decl(implicitsResolve.ts, 79, 16))
+}
+
+function e() {
+>e : Symbol(e, Decl(implicitsResolve.ts, 82, 1))
+
+  implicit const c = <T>(implicit  v:{value:T}, implicit c: {value:boolean}, n:T) => c.value ? v.value : n
+>c : Symbol(c, Decl(implicitsResolve.ts, 85, 16))
+>T : Symbol(T, Decl(implicitsResolve.ts, 85, 22))
+>v : Symbol(v, Decl(implicitsResolve.ts, 85, 25))
+>value : Symbol(value, Decl(implicitsResolve.ts, 85, 38))
+>T : Symbol(T, Decl(implicitsResolve.ts, 85, 22))
+>c : Symbol(c, Decl(implicitsResolve.ts, 85, 47))
+>value : Symbol(value, Decl(implicitsResolve.ts, 85, 61))
+>n : Symbol(n, Decl(implicitsResolve.ts, 85, 76))
+>T : Symbol(T, Decl(implicitsResolve.ts, 85, 22))
+>c.value : Symbol(value, Decl(implicitsResolve.ts, 85, 61))
+>c : Symbol(c, Decl(implicitsResolve.ts, 85, 47))
+>value : Symbol(value, Decl(implicitsResolve.ts, 85, 61))
+>v.value : Symbol(value, Decl(implicitsResolve.ts, 85, 38))
+>v : Symbol(v, Decl(implicitsResolve.ts, 85, 25))
+>value : Symbol(value, Decl(implicitsResolve.ts, 85, 38))
+>n : Symbol(n, Decl(implicitsResolve.ts, 85, 76))
+
+  implicit let a = {value: 10}
+>a : Symbol(a, Decl(implicitsResolve.ts, 86, 14))
+>value : Symbol(value, Decl(implicitsResolve.ts, 86, 20))
+
+  implicit let f = {value: true}
+>f : Symbol(f, Decl(implicitsResolve.ts, 87, 14))
+>value : Symbol(value, Decl(implicitsResolve.ts, 87, 20))
+
+  const e: number = 1
+>e : Symbol(e, Decl(implicitsResolve.ts, 88, 7))
+
+  const b1:number = ??(e) // ==> c(a,f,e)
+>b1 : Symbol(b1, Decl(implicitsResolve.ts, 89, 7))
+>e : Symbol(e, Decl(implicitsResolve.ts, 88, 7))
+}
+
+function f() {
+>f : Symbol(f, Decl(implicitsResolve.ts, 90, 1))
+
+  implicit const g = function f<T>(n:{value:T}):{value:T} { return n; };
+>g : Symbol(g, Decl(implicitsResolve.ts, 93, 16))
+>f : Symbol(f, Decl(implicitsResolve.ts, 93, 20))
+>T : Symbol(T, Decl(implicitsResolve.ts, 93, 32))
+>n : Symbol(n, Decl(implicitsResolve.ts, 93, 35))
+>value : Symbol(value, Decl(implicitsResolve.ts, 93, 38))
+>T : Symbol(T, Decl(implicitsResolve.ts, 93, 32))
+>value : Symbol(value, Decl(implicitsResolve.ts, 93, 49))
+>T : Symbol(T, Decl(implicitsResolve.ts, 93, 32))
+>n : Symbol(n, Decl(implicitsResolve.ts, 93, 35))
+
+  ??({value:1}) // ===> g
+>value : Symbol(value, Decl(implicitsResolve.ts, 94, 6))
+}
+
+interface Monoid<T> {
+>Monoid : Symbol(Monoid, Decl(implicitsResolve.ts, 95, 1))
+>T : Symbol(T, Decl(implicitsResolve.ts, 97, 17))
+
+  add: (a: T, b: T) => T;
+>add : Symbol(Monoid.add, Decl(implicitsResolve.ts, 97, 21))
+>a : Symbol(a, Decl(implicitsResolve.ts, 98, 8))
+>T : Symbol(T, Decl(implicitsResolve.ts, 97, 17))
+>b : Symbol(b, Decl(implicitsResolve.ts, 98, 13))
+>T : Symbol(T, Decl(implicitsResolve.ts, 97, 17))
+>T : Symbol(T, Decl(implicitsResolve.ts, 97, 17))
+
+  unit: T;
+>unit : Symbol(Monoid.unit, Decl(implicitsResolve.ts, 98, 25))
+>T : Symbol(T, Decl(implicitsResolve.ts, 97, 17))
+
+};
+
+const multMonoidDef = {
+>multMonoidDef : Symbol(multMonoidDef, Decl(implicitsResolve.ts, 102, 5))
+
+  add: (l: number, r: number) => l * r,
+>add : Symbol(add, Decl(implicitsResolve.ts, 102, 23))
+>l : Symbol(l, Decl(implicitsResolve.ts, 103, 8))
+>r : Symbol(r, Decl(implicitsResolve.ts, 103, 18))
+>l : Symbol(l, Decl(implicitsResolve.ts, 103, 8))
+>r : Symbol(r, Decl(implicitsResolve.ts, 103, 18))
+
+  unit: 1
+>unit : Symbol(unit, Decl(implicitsResolve.ts, 103, 39))
+
+};
+
+const sumMonoidDef = {
+>sumMonoidDef : Symbol(sumMonoidDef, Decl(implicitsResolve.ts, 107, 5))
+
+  add: (l: number, r: number) => l + r,
+>add : Symbol(add, Decl(implicitsResolve.ts, 107, 22))
+>l : Symbol(l, Decl(implicitsResolve.ts, 108, 8))
+>r : Symbol(r, Decl(implicitsResolve.ts, 108, 18))
+>l : Symbol(l, Decl(implicitsResolve.ts, 108, 8))
+>r : Symbol(r, Decl(implicitsResolve.ts, 108, 18))
+
+  unit: 0
+>unit : Symbol(unit, Decl(implicitsResolve.ts, 108, 39))
+
+};
+
+const arrMonoidDefAbs = <T>(): Monoid<T[]> => ({
+>arrMonoidDefAbs : Symbol(arrMonoidDefAbs, Decl(implicitsResolve.ts, 112, 5))
+>T : Symbol(T, Decl(implicitsResolve.ts, 112, 25))
+>Monoid : Symbol(Monoid, Decl(implicitsResolve.ts, 95, 1))
+>T : Symbol(T, Decl(implicitsResolve.ts, 112, 25))
+
+  add: (l: T[], r: T[]) => l.concat(r),
+>add : Symbol(add, Decl(implicitsResolve.ts, 112, 48))
+>l : Symbol(l, Decl(implicitsResolve.ts, 113, 8))
+>T : Symbol(T, Decl(implicitsResolve.ts, 112, 25))
+>r : Symbol(r, Decl(implicitsResolve.ts, 113, 15))
+>T : Symbol(T, Decl(implicitsResolve.ts, 112, 25))
+>l.concat : Symbol(Array.concat, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>l : Symbol(l, Decl(implicitsResolve.ts, 113, 8))
+>concat : Symbol(Array.concat, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>r : Symbol(r, Decl(implicitsResolve.ts, 113, 15))
+
+  unit: []
+>unit : Symbol(unit, Decl(implicitsResolve.ts, 113, 39))
+
+});
+
+function arrReduce<T>(implicit m: Monoid<T>, arr: T[]) {
+>arrReduce : Symbol(arrReduce, Decl(implicitsResolve.ts, 115, 3))
+>T : Symbol(T, Decl(implicitsResolve.ts, 117, 19))
+>m : Symbol(m, Decl(implicitsResolve.ts, 117, 22))
+>Monoid : Symbol(Monoid, Decl(implicitsResolve.ts, 95, 1))
+>T : Symbol(T, Decl(implicitsResolve.ts, 117, 19))
+>arr : Symbol(arr, Decl(implicitsResolve.ts, 117, 44))
+>T : Symbol(T, Decl(implicitsResolve.ts, 117, 19))
+
+  return arr.reduce((a, b) => ??.add(a, b), ??.unit);
+>arr.reduce : Symbol(Array.reduce, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>arr : Symbol(arr, Decl(implicitsResolve.ts, 117, 44))
+>reduce : Symbol(Array.reduce, Decl(lib.d.ts, --, --), Decl(lib.d.ts, --, --))
+>a : Symbol(a, Decl(implicitsResolve.ts, 118, 21))
+>b : Symbol(b, Decl(implicitsResolve.ts, 118, 23))
+>??.add : Symbol(Monoid.add, Decl(implicitsResolve.ts, 97, 21))
+>add : Symbol(Monoid.add, Decl(implicitsResolve.ts, 97, 21))
+>a : Symbol(a, Decl(implicitsResolve.ts, 118, 21))
+>b : Symbol(b, Decl(implicitsResolve.ts, 118, 23))
+>??.unit : Symbol(Monoid.unit, Decl(implicitsResolve.ts, 98, 25))
+>unit : Symbol(Monoid.unit, Decl(implicitsResolve.ts, 98, 25))
+}
+
+function monoidsTest() {
+>monoidsTest : Symbol(monoidsTest, Decl(implicitsResolve.ts, 119, 1))
+
+  implicit const arrMonoid = arrMonoidDefAbs;
+>arrMonoid : Symbol(arrMonoid, Decl(implicitsResolve.ts, 122, 16))
+>arrMonoidDefAbs : Symbol(arrMonoidDefAbs, Decl(implicitsResolve.ts, 112, 5))
+
+  implicit const numMonoid = multMonoidDef;
+>numMonoid : Symbol(numMonoid, Decl(implicitsResolve.ts, 123, 16))
+>multMonoidDef : Symbol(multMonoidDef, Decl(implicitsResolve.ts, 102, 5))
+
+  const n = arrReduce([1,2,3,4]);
+>n : Symbol(n, Decl(implicitsResolve.ts, 124, 7))
+>arrReduce : Symbol(arrReduce, Decl(implicitsResolve.ts, 115, 3))
+
+  const m = arrReduce([[1,2],[3,4]]);
+>m : Symbol(m, Decl(implicitsResolve.ts, 125, 7))
+>arrReduce : Symbol(arrReduce, Decl(implicitsResolve.ts, 115, 3))
+  {
+    implicit const sumNumMonoid = sumMonoidDef;
+>sumNumMonoid : Symbol(sumNumMonoid, Decl(implicitsResolve.ts, 127, 18))
+>sumMonoidDef : Symbol(sumMonoidDef, Decl(implicitsResolve.ts, 107, 5))
+
+    const n = arrReduce([1,2,3,4,5]);
+>n : Symbol(n, Decl(implicitsResolve.ts, 128, 9))
+>arrReduce : Symbol(arrReduce, Decl(implicitsResolve.ts, 115, 3))
+  }
+}
+

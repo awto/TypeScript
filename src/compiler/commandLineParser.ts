@@ -636,6 +636,25 @@ namespace ts {
                 type: "object"
             },
             description: Diagnostics.List_of_language_service_plugins
+        },
+        // implicits options
+        {
+            name: "implicits",
+            type: "boolean",
+            category: Diagnostics.Implicit_declarations,
+            description: Diagnostics.Report_errors_on_unused_locals,
+        },
+        {
+            name: "implicitCasts",
+            type: "boolean",
+            category: Diagnostics.Implicit_declarations,
+            description: Diagnostics.Enable_implicit_declarations,
+        },
+        {
+            name: "maxImplicitsStack",
+            type: "number",
+            category: Diagnostics.Implicit_declarations,
+            description: Diagnostics.Maximal_implicits_resolution_stack_level,
         }
     ];
 

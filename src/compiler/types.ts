@@ -112,6 +112,7 @@ namespace ts {
         AmpersandAmpersandToken,
         BarBarToken,
         QuestionToken,
+        QuestionQuestionToken,
         ColonToken,
         AtToken,
         // Assignments
@@ -128,6 +129,7 @@ namespace ts {
         AmpersandEqualsToken,
         BarEqualsToken,
         CaretEqualsToken,
+        QueryImplicit,
         // Identifiers
         Identifier,
         // Reserved words
@@ -203,6 +205,7 @@ namespace ts {
         UndefinedKeyword,
         FromKeyword,
         GlobalKeyword,
+        ImplicitKeyword,
         OfKeyword, // LastKeyword and LastToken
 
         // Parse tree nodes
@@ -487,6 +490,7 @@ namespace ts {
         Async =              1 << 8,  // Property/Method/Function
         Default =            1 << 9,  // Function/Class (export default declaration)
         Const =              1 << 11, // Variable declaration
+        Implicit =           1 << 12, // Implicit declaration
         HasComputedFlags =   1 << 29, // Modifier flags have been computed
 
         AccessibilityModifier = Public | Private | Protected,
@@ -494,7 +498,7 @@ namespace ts {
         ParameterPropertyModifier = AccessibilityModifier | Readonly,
         NonPublicAccessibilityModifier = Private | Protected,
 
-        TypeScriptModifier = Ambient | Public | Private | Protected | Readonly | Abstract | Const,
+        TypeScriptModifier = Ambient | Public | Private | Protected | Readonly | Abstract | Const | Implicit,
         ExportDefault = Export | Default,
     }
 
@@ -513,6 +517,13 @@ namespace ts {
         Succeeded = 1, // Should be truthy
         Failed = 2,
         FailedAndReported = 3
+    }
+
+    /* @internal */
+    export interface Implicit {
+        symbol: Symbol;
+        matchSignature?: Signature;
+        hidden?: boolean;
     }
 
     export interface Node extends TextRange {
@@ -536,6 +547,7 @@ namespace ts {
         /* @internal */ emitNode?: EmitNode;            // Associated EmitNode (initialized by transforms)
         /* @internal */ contextualType?: Type;          // Used to temporarily assign a contextual type during overload resolution
         /* @internal */ contextualMapper?: TypeMapper;  // Mapper for contextual type
+        /* @internal */ implicits?: Implicit[];         // Implicit values declarations in scope of the node
     }
 
     export interface NodeArray<T extends Node> extends Array<T>, TextRange {
@@ -570,6 +582,7 @@ namespace ts {
         | Token<SyntaxKind.ProtectedKeyword>
         | Token<SyntaxKind.ReadonlyKeyword>
         | Token<SyntaxKind.StaticKeyword>
+        | Token<SyntaxKind.ImplicitKeyword>
         ;
 
     export type ModifiersArray = NodeArray<Modifier>;
@@ -997,6 +1010,8 @@ namespace ts {
 
     export interface Expression extends Node {
         _expressionBrand: any;
+        /* @internal */ implicitCast?: Expression;
+        /* @internal */ implicitType?: Type;
     }
 
     export interface OmittedExpression extends Expression {
@@ -1104,6 +1119,11 @@ namespace ts {
         kind: SyntaxKind.YieldExpression;
         asteriskToken?: AsteriskToken;
         expression?: Expression;
+    }
+
+    export interface QueryImplicit extends PrimaryExpression {
+        kind: SyntaxKind.QueryImplicit;
+        resolvedExpression?: Expression;
     }
 
     // see: https://tc39.github.io/ecma262/#prod-ExponentiationExpression
@@ -1479,6 +1499,7 @@ namespace ts {
         expression: LeftHandSideExpression;
         typeArguments?: NodeArray<TypeNode>;
         arguments: NodeArray<Expression>;
+        resolvedImplicitArguments?: Expression[];
     }
 
     // see: https://tc39.github.io/ecma262/#prod-SuperCall
@@ -1666,6 +1687,7 @@ namespace ts {
     export interface VariableStatement extends Statement {
         kind: SyntaxKind.VariableStatement;
         declarationList: VariableDeclarationList;
+        /*@internal*/declaredImplicits: Implicit[];
     }
 
     export interface ExpressionStatement extends Statement {
@@ -3342,6 +3364,7 @@ namespace ts {
         declaration: SignatureDeclaration;  // Originating declaration
         typeParameters?: TypeParameter[];   // Type parameters (undefined if non-generic)
         parameters: Symbol[];               // Parameters
+        implicitParameters?: Symbol[];      // Implicit parameters
         /* @internal */
         thisParameter?: Symbol;             // symbol of this-type parameter
         /* @internal */
@@ -3565,9 +3588,11 @@ namespace ts {
         typeRoots?: string[];
         /*@internal*/ version?: boolean;
         /*@internal*/ watch?: boolean;
-
+        implicits?: boolean;
+        implicitCasts?: boolean;
+        maxImplicitsStack?: number;
         [option: string]: CompilerOptionsValue | JsonSourceFile | undefined;
-    }
+     }
 
     export interface TypeAcquisition {
         /* @deprecated typingOptions.enableAutoDiscovery

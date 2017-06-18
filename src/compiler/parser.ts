@@ -2181,7 +2181,6 @@ namespace ts {
                 node.type = parseParameterType();
                 return finishNode(node);
             }
-
             node.decorators = parseDecorators();
             node.modifiers = parseModifiers();
             node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
@@ -2848,6 +2847,7 @@ namespace ts {
                     // Yield/await always starts an expression.  Either it is an identifier (in which case
                     // it is definitely an expression).  Or it's a keyword (either because we're in
                     // a generator or async function, or in strict mode (or both)) and it started a yield or await expression.
+                case SyntaxKind.QuestionQuestionToken:
                     return true;
                 default:
                     // Error tolerance.  If we see the start of some binary operator, we consider
@@ -2881,7 +2881,6 @@ namespace ts {
             if (saveDecoratorContext) {
                 setDecoratorContext(/*val*/ false);
             }
-
             let expr = parseAssignmentExpressionOrHigher();
             let operatorToken: BinaryOperatorToken;
             while ((operatorToken = parseOptionalToken(SyntaxKind.CommaToken))) {
@@ -4259,6 +4258,10 @@ namespace ts {
                     break;
                 case SyntaxKind.TemplateHead:
                     return parseTemplateExpression();
+                case SyntaxKind.QuestionQuestionToken:
+                    const queryNode = <PrimaryExpression>createNode(SyntaxKind.QueryImplicit);
+                    nextToken();
+                    return finishNode(queryNode);
             }
 
             return parseIdentifier(Diagnostics.Expression_expected);
@@ -4775,6 +4778,7 @@ namespace ts {
                     case SyntaxKind.ModuleKeyword:
                     case SyntaxKind.NamespaceKeyword:
                         return nextTokenIsIdentifierOrStringLiteralOnSameLine();
+                    case SyntaxKind.ImplicitKeyword:
                     case SyntaxKind.AbstractKeyword:
                     case SyntaxKind.AsyncKeyword:
                     case SyntaxKind.DeclareKeyword:
@@ -4935,6 +4939,7 @@ namespace ts {
                     return parseDebuggerStatement();
                 case SyntaxKind.AtToken:
                     return parseDeclaration();
+                case SyntaxKind.ImplicitKeyword:
                 case SyntaxKind.AsyncKeyword:
                 case SyntaxKind.InterfaceKeyword:
                 case SyntaxKind.TypeKeyword:
@@ -5095,7 +5100,6 @@ namespace ts {
 
         function parseVariableDeclarationList(inForStatementInitializer: boolean): VariableDeclarationList {
             const node = <VariableDeclarationList>createNode(SyntaxKind.VariableDeclarationList);
-
             switch (token()) {
                 case SyntaxKind.VarKeyword:
                     break;

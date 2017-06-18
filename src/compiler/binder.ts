@@ -2250,7 +2250,7 @@ namespace ts {
         }
 
         function bindNamespaceExportDeclaration(node: NamespaceExportDeclaration) {
-            if (node.modifiers && node.modifiers.length) {
+            if (node.modifiers && node.modifiers.filter(i => i.kind !== SyntaxKind.ImplicitKeyword).length) {
                 file.bindDiagnostics.push(createDiagnosticForNode(node, Diagnostics.Modifiers_cannot_appear_here));
             }
 
