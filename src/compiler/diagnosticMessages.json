@@ -3663,15 +3663,15 @@
         "category": "Message",
         "code": 19000
     },
-    "No implicits declarations matching '${0}'": {
+    "No implicits declarations matching '{0}'": {
         "category": "Error",
         "code": 19001
     },
-    "Stack overflow during implicits resolution for '${0}'": {
+    "Stack overflow during implicits resolution for '{0}'": {
         "category": "Error",
         "code": 19002
     },
-    "Resolved implicit declaration is not in the scope at the query '${0}'": {
+    "Resolved implicit declaration is not in the scope at the query '{0}'": {
         "category": "Error",
         "code": 19003
     },
@@ -3690,5 +3690,13 @@
     "Maximal implicits resolution stack level": {
         "category": "Message",
         "code": 19007
+    },
+    "While resolving implicits query for type '{0}' from {1}": {
+        "category": "Message",
+        "code": 19008
+    },
+    "Implicit modifier can be applied only to `const`/`let` variable definitions or function's parameters": {
+        "category": "Error",
+        "code": 19009
     }
 }

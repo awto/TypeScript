@@ -1,0 +1,73 @@
+tests/cases/compiler/implicitsResolveDiagnostics.ts(2,34): error TS19004: Implicits must be before any other parameter
+tests/cases/compiler/implicitsResolveDiagnostics.ts(11,9): error TS19003: Resolved implicit declaration is not in the scope at the query 'number'
+  While resolving implicits query for type '{ value: number; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(6,15)
+    While resolving implicits query for type '{ val: number; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(7,15)
+tests/cases/compiler/implicitsResolveDiagnostics.ts(12,9): error TS19001: No implicits declarations matching 'string'
+  While resolving implicits query for type '{ value: string; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(6,15)
+    While resolving implicits query for type '{ val: string; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(7,15)
+tests/cases/compiler/implicitsResolveDiagnostics.ts(13,9): error TS19001: No implicits declarations matching 'string'
+tests/cases/compiler/implicitsResolveDiagnostics.ts(16,1): error TS19002: Stack overflow during implicits resolution for 'number[][][][][][][][][][]'
+  While resolving implicits query for type 'number[][][][][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+    While resolving implicits query for type 'number[][][][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+      While resolving implicits query for type 'number[][][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+        While resolving implicits query for type 'number[][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+          While resolving implicits query for type 'number[][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+            While resolving implicits query for type 'number[][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+              While resolving implicits query for type 'number[][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+                While resolving implicits query for type 'number[][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+                  While resolving implicits query for type 'number[]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+                    While resolving implicits query for type 'number' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+tests/cases/compiler/implicitsResolveDiagnostics.ts(24,1): error TS1005: '}' expected.
+
+
+==== tests/cases/compiler/implicitsResolveDiagnostics.ts (6 errors) ====
+    implicit var avar: number;
+    implicit function a2(a1: number, implicit a2:number) { return a1 + a2; }
+                                     ~~~~~~~~~~~~~~~~~~
+!!! error TS19004: Implicits must be before any other parameter
+    
+    implicit function a(arg1: number, implicit arg2: number) {
+    implicit const n = 10;
+    implicit const fna = <T>(implicit n: T) => ({ value: n });
+    implicit const fnb = <T>(implicit n: { value: T }) => ({ val: n.value });
+    
+    {
+            const n = 20;
+            ?? as {val: number };
+            ~~
+!!! error TS19003: Resolved implicit declaration is not in the scope at the query 'number'
+!!! error TS19003:   While resolving implicits query for type '{ value: number; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(6,15)
+!!! error TS19003:     While resolving implicits query for type '{ val: number; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(7,15)
+            ?? as {val: string };
+            ~~
+!!! error TS19001: No implicits declarations matching 'string'
+!!! error TS19001:   While resolving implicits query for type '{ value: string; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(6,15)
+!!! error TS19001:     While resolving implicits query for type '{ val: string; }' from tests/cases/compiler/implicitsResolveDiagnostics.ts(7,15)
+            ?? as string;
+            ~~
+!!! error TS19001: No implicits declarations matching 'string'
+    }
+    implicit let cycle: <T>(implicit arg: T[]) => T;
+    ?? as number;
+    ~~
+!!! error TS19002: Stack overflow during implicits resolution for 'number[][][][][][][][][][]'
+!!! error TS19002:   While resolving implicits query for type 'number[][][][][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:     While resolving implicits query for type 'number[][][][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:       While resolving implicits query for type 'number[][][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:         While resolving implicits query for type 'number[][][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:           While resolving implicits query for type 'number[][][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:             While resolving implicits query for type 'number[][][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:               While resolving implicits query for type 'number[][][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:                 While resolving implicits query for type 'number[][]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:                   While resolving implicits query for type 'number[]' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+!!! error TS19002:                     While resolving implicits query for type 'number' from tests/cases/compiler/implicitsResolveDiagnostics.ts(15,13)
+    implicit const num = (implicit t: boolean) => t ? 10 : 20
+    implicit const t = true
+    ?? as number;
+    
+    function plus(implicit a: number, b: number): number {
+        return a + b;
+    }
+    
+    
+!!! error TS1005: '}' expected.

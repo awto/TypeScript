@@ -2842,17 +2842,17 @@ namespace ts {
                         typeToTypeNodeHelper(anyArrayType, context),
                         /*initializer*/ undefined);
                 }
-                const modifiers = parameterDeclaration.modifiers && parameterDeclaration.modifiers.map(getSynthesizedClone);
-                const dotDotDotToken = isRestParameter(parameterDeclaration) ? createToken(SyntaxKind.DotDotDotToken) : undefined;
-                const name = parameterDeclaration.name ?
+                const modifiers = parameterDeclaration && parameterDeclaration.modifiers && parameterDeclaration.modifiers.map(getSynthesizedClone);
+                const dotDotDotToken = parameterDeclaration && isRestParameter(parameterDeclaration) ? createToken(SyntaxKind.DotDotDotToken) : undefined;
+                const name = parameterDeclaration && parameterDeclaration.name ?
                     parameterDeclaration.name.kind === SyntaxKind.Identifier ?
                         setEmitFlags(getSynthesizedClone(parameterDeclaration.name), EmitFlags.NoAsciiEscaping) :
                         cloneBindingName(parameterDeclaration.name) :
                     parameterSymbol.name;
-                const questionToken = isOptionalParameter(parameterDeclaration) ? createToken(SyntaxKind.QuestionToken) : undefined;
+                const questionToken = parameterDeclaration && isOptionalParameter(parameterDeclaration) ? createToken(SyntaxKind.QuestionToken) : undefined;
 
                 let parameterType = getTypeOfSymbol(parameterSymbol);
-                if (isRequiredInitializedParameter(parameterDeclaration)) {
+                if (parameterDeclaration && isRequiredInitializedParameter(parameterDeclaration)) {
                     parameterType = getNullableType(parameterType, TypeFlags.Undefined);
                 }
                 const parameterTypeNode = typeToTypeNodeHelper(parameterType, context);
@@ -6359,7 +6359,7 @@ namespace ts {
                     }
                     else if (getModifierFlags(param) & ModifierFlags.Implicit) {
                         implicitParameters.push(paramSymbol);
-                        if (parameters.length) {
+                        if (parameters.length || thisParameter) {
                             error(param, Diagnostics.Implicits_must_be_before_any_other_parameter);
                         }
                     }
@@ -15715,18 +15715,6 @@ namespace ts {
                     const inferenceContext = originalCandidate.typeParameters ?
                         createInferenceContext(originalCandidate, /*flags*/ isInJavaScriptFile(node) ? InferenceFlags.AnyDefault : 0) :
                         undefined;
-                    // more context for implicits?
-                    /*
-                    if (compilerOptions.implicits && inferenceContext && node.kind === SyntaxKind.CallExpression
-                        && (originalCandidate.implicitParameters && originalCandidate.implicitParameters.length
-                            || args.some(i => i.kind === SyntaxKind.QueryImplicit))) {
-                        const contextType = getFullContextualType(<CallExpression>node);
-                        if (contextType) {
-                            const returnType = getReturnTypeOfSignature(originalCandidate);
-                            inferTypes(inferenceContext.inferences, contextType, returnType);
-                        }
-                    }
-                    */
                     while (true) {
                         candidate = originalCandidate;
                         if (candidate.typeParameters) {
@@ -20006,7 +19994,6 @@ namespace ts {
                 }
                 checkCollisionWithCapturedSuperVariable(node, <Identifier>node.name);
                 checkCollisionWithCapturedThisVariable(node, <Identifier>node.name);
-                checkCollisionWithCapturedNewTargetVariable(node, <Identifier>node.name);
                 checkCollisionWithRequireExportsInGeneratedCode(node, <Identifier>node.name);
                 checkCollisionWithGlobalPromiseInGeneratedCode(node, <Identifier>node.name);
             }
@@ -20046,7 +20033,6 @@ namespace ts {
         function checkVariableStatement(node: VariableStatement) {
             // Grammar checking
             checkGrammarDecorators(node) || checkGrammarModifiers(node) || checkGrammarVariableDeclarationList(node.declarationList) || checkGrammarForDisallowedLetOrConstStatement(node);
-
             forEach(node.declarationList.declarations, checkSourceElement);
         }
 
@@ -23579,7 +23565,6 @@ namespace ts {
             if (quickResult !== undefined) {
                 return quickResult;
             }
-
             let lastStatic: Node, lastPrivate: Node, lastProtected: Node, lastDeclare: Node, lastAsync: Node, lastReadonly: Node;
             let flags = ModifierFlags.None;
             for (const modifier of node.modifiers) {
@@ -23596,6 +23581,19 @@ namespace ts {
                         if (node.kind !== SyntaxKind.EnumDeclaration && node.parent.kind === SyntaxKind.ClassDeclaration) {
                             return grammarErrorOnNode(node, Diagnostics.A_class_member_cannot_have_the_0_keyword, tokenToString(SyntaxKind.ConstKeyword));
                         }
+                        break;
+                    case SyntaxKind.ImplicitKeyword:
+                        flags |= ModifierFlags.Implicit;
+                        if (node.kind === SyntaxKind.VariableStatement) {
+                            const variableStatement = <VariableStatement>node;
+                            if (variableStatement.declarationList.flags & (NodeFlags.Const | NodeFlags.Let)) {
+                                break;
+                            }
+                        }
+                        else if (node.kind === SyntaxKind.Parameter) {
+                            break;
+                        }
+                        grammarErrorOnNode(node, Diagnostics.Implicit_modifier_can_be_applied_only_to_const_Slash_let_variable_definitions_or_function_s_parameters);
                         break;
                     case SyntaxKind.PublicKeyword:
                     case SyntaxKind.ProtectedKeyword:
@@ -23787,7 +23785,7 @@ namespace ts {
          * undefined: Need to do full checking on the modifiers.
          */
         function reportObviousModifierErrors(node: Node): boolean | undefined {
-            return !node.modifiers || node.modifiers.filter(i => i.kind === SyntaxKind.ImplicitKeyword).length
+            return !node.modifiers || !node.modifiers.length
                 ? false
                 : shouldReportBadModifier(node)
                     ? grammarErrorOnFirstToken(node, Diagnostics.Modifiers_cannot_appear_here)
@@ -23823,6 +23821,7 @@ namespace ts {
                             return nodeHasAnyModifiersExcept(node, SyntaxKind.AbstractKeyword);
                         case SyntaxKind.InterfaceDeclaration:
                         case SyntaxKind.VariableStatement:
+                            return nodeHasAnyModifiersExcept(node, SyntaxKind.ImplicitKeyword);
                         case SyntaxKind.TypeAliasDeclaration:
                             return true;
                         case SyntaxKind.EnumDeclaration:
@@ -24795,6 +24794,7 @@ namespace ts {
                     const parentType = getFullContextualType(propertyAccess) || anyType;
                     const symbol = <TransientSymbol>createSymbol(SymbolFlags.Property | SymbolFlags.Transient, propertyAccess.name.text);
                     symbol.type = parentType;
+                    symbol.declarations = [];
                     const members = createMap<Symbol>();
                     members.set(symbol.name, symbol);
                     return createAnonymousType(undefined, members, emptyArray, emptyArray, undefined, undefined);
@@ -24805,7 +24805,9 @@ namespace ts {
                 if (call.expression === node) {
                     const parentType = getFullContextualType(call) || anyType;
                     const parameters = call.arguments.map((i, x) => {
-                        const symbol = <TransientSymbol>createSymbol(SymbolFlags.FunctionScopedVariable | SymbolFlags.Transient, `i${x}`);
+                        const name = `i${x}`;
+                        const symbol = <TransientSymbol>createSymbol(SymbolFlags.FunctionScopedVariable | SymbolFlags.Transient, name);
+                        symbol.declarations = [];
                         symbol.type = getTypeOfNode(i);
                         return symbol;
                     });
@@ -24881,6 +24883,7 @@ namespace ts {
                             collectImplicits(result, element);
                         }
                     }
+                    return;
                 }
                 const symbol = getSymbolAtLocation(binding);
                 const hidden = declarations.has(symbol.name);
@@ -24943,40 +24946,58 @@ namespace ts {
         }
 
         function queryImplicits(type: Type, table: Implicit[], query: Node, reportErrors = true): Expression {
-            const result = queryImplicitsResolution(type, table, compilerOptions.maxImplicitsStack || 10);
+            let errorInfo: DiagnosticMessageChain;
+            const result = queryImplicitsResolution(type, compilerOptions.maxImplicitsStack || 10);
+            if (errorInfo) {
+                diagnostics.add(createDiagnosticForNodeFromMessageChain(query, errorInfo));
+            }
             if (!result && reportErrors) {
                 return createIdentifier("undefined");
             }
             return result;
-            function queryImplicitsResolution(type: Type, table: Implicit[], stackLength: number) {
+            function queryImplicitsResolution(type: Type, stackLength: number) {
                 if (stackLength === 0) {
                     reportError(Diagnostics.Stack_overflow_during_implicits_resolution_for_0);
                     return undefined;
                 }
                 for (const item of table) {
-                    const {symbol, hidden} = item;
-                    let {matchSignature} = item;
+                    const {matchSignature, symbol, hidden} = item;
                     if (matchSignature !== undefined) {
-                        matchSignature = cloneSignature(matchSignature);
-                        let returnType = getReturnTypeOfSignature(matchSignature);
-                        let instantiatedSignature = matchSignature;
+                        // matchSignature = cloneSignature(matchSignature);
+                        const returnType = getReturnTypeOfSignature(matchSignature);
+                        const context = createInferenceContext(matchSignature, 0);
+                        const implicitParameters = matchSignature.implicitParameters;
                         if (matchSignature.typeParameters && matchSignature.typeParameters.length) {
-                            const context = createInferenceContext(matchSignature, InferenceFlags.NoDefault);
                             inferTypes(context.inferences, type, returnType);
-                            instantiatedSignature = instantiateSignature(matchSignature, context, /*eraseTypeParameters*/ true);
-                            returnType = getReturnTypeOfSignature(instantiatedSignature);
                         }
-                        if (isTypeRelatedTo(returnType, type, implicitsResolveRelation)) {
+                        if (isTypeRelatedTo(instantiateType(returnType, context), type, implicitsResolveRelation)) {
                             if (hidden) {
                                 reportError(Diagnostics.Resolved_implicit_declaration_is_not_in_the_scope_at_the_query_0);
                                 return undefined;
                             }
-                            // TODO: try checkCallExpression
-                            const parameters: Expression[] = instantiatedSignature.implicitParameters
-                                    ? instantiatedSignature.implicitParameters.map(
-                                    parameter => queryImplicitsResolution(getTypeOfSymbol(parameter), table, stackLength - 1) ||  createIdentifier("undefined"))
-                                    : [];
+                            const parameters: Expression[] = [];
+                            if (implicitParameters) {
+                                for (const paramSymbol of implicitParameters) {
+                                    const paramType = instantiateType(getTypeOfSymbol(paramSymbol), context);
+                                    const parameter = queryImplicitsResolution(paramType, stackLength - 1);
+                                    if (parameter === undefined) {
+                                        if (compilerOptions.implicitsBacktrack) {
+                                            continue;
+                                        }
+                                        if (errorInfo) {
+                                            errorInfo = concatenateDiagnosticMessageChains(
+                                                errorInfo,
+                                                chainDiagnosticMessages(/* errorInfo */ undefined,
+                                                    Diagnostics.While_resolving_implicits_query_for_type_0_from_1,
+                                                    typeToString(type), nodePosToString(symbol.declarations[0])));
+                                        }
+                                        return undefined;
+                                    }
+                                    parameters.push(parameter);
+                                }
+                            }
                             const callee = createIdentifier(symbol.name);
+                            callee.original = getNameOfDeclaration(symbol.declarations[0]);
                             const links = getNodeLinks(callee);
                             links.resolvedSymbol = symbol;
                             const result = createCall(callee, /*typeArguments*/ undefined, parameters);
@@ -24993,6 +25014,7 @@ namespace ts {
                                 return undefined;
                             }
                             const result = createIdentifier(symbol.name);
+                            result.original = getNameOfDeclaration(symbol.declarations[0]);
                             const links = getNodeLinks(result);
                             links.resolvedSymbol = symbol;
                             links.resolvedType = result.implicitType = matchType;
@@ -25005,7 +25027,7 @@ namespace ts {
 
                 function reportError(message: DiagnosticMessage) {
                     if (reportErrors) {
-                        error(query, message, typeToString(type));
+                        errorInfo = chainDiagnosticMessages(errorInfo, message, typeToString(type));
                     }
                 }
             }

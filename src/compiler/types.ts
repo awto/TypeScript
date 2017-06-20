@@ -3591,6 +3591,7 @@ namespace ts {
         implicits?: boolean;
         implicitCasts?: boolean;
         maxImplicitsStack?: number;
+        implicitsBacktrack?: boolean;
         [option: string]: CompilerOptionsValue | JsonSourceFile | undefined;
      }
 

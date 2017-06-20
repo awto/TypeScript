@@ -127,7 +127,7 @@ function monoidsTest() {
   const n = arrReduce([1,2,3,4]);
   const m = arrReduce([[1,2],[3,4]]);
   {
-    implicit const sumNumMonoid = sumMonoidDef;
+    implicit const numMonoid = sumMonoidDef;
     const n = arrReduce([1,2,3,4,5]);
   }
 }

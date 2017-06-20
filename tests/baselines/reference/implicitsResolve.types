@@ -333,7 +333,7 @@ let a: {value: number} = e1(); // => e1(c1(c2));
 >e1 : <T>() => { value: T; }
 
 a = ??;                     // => a = c1(c2);
->a = ?? : { value: number; }
+>a = ?? : { value: T; }
 >a : { value: number; }
 
 e2(10);                        // => e2(c1(c2),10)
@@ -676,8 +676,8 @@ function monoidsTest() {
 >3 : 3
 >4 : 4
   {
-    implicit const sumNumMonoid = sumMonoidDef;
->sumNumMonoid : { add: (l: number, r: number) => number; unit: number; }
+    implicit const numMonoid = sumMonoidDef;
+>numMonoid : { add: (l: number, r: number) => number; unit: number; }
 >sumMonoidDef : { add: (l: number, r: number) => number; unit: number; }
 
     const n = arrReduce([1,2,3,4,5]);

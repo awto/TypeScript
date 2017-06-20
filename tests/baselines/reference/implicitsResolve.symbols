@@ -547,8 +547,8 @@ function monoidsTest() {
 >m : Symbol(m, Decl(implicitsResolve.ts, 125, 7))
 >arrReduce : Symbol(arrReduce, Decl(implicitsResolve.ts, 115, 3))
   {
-    implicit const sumNumMonoid = sumMonoidDef;
->sumNumMonoid : Symbol(sumNumMonoid, Decl(implicitsResolve.ts, 127, 18))
+    implicit const numMonoid = sumMonoidDef;
+>numMonoid : Symbol(numMonoid, Decl(implicitsResolve.ts, 127, 18))
 >sumMonoidDef : Symbol(sumMonoidDef, Decl(implicitsResolve.ts, 107, 5))
 
     const n = arrReduce([1,2,3,4,5]);
